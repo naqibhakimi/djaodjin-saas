@@ -51,8 +51,13 @@ import logging, time
 from django.core.management.base import BaseCommand
 
 from ...models import get_broker
-from ...renewals import (create_charges_for_balance, complete_charges,
-    extend_subscriptions, recognize_income, trigger_expiration_notices)
+from ...renewals import (
+    create_charges_for_balance,
+    complete_charges,
+    extend_subscriptions,
+    recognize_income,
+    trigger_expiration_notices,
+)
 from ...utils import datetime_or_now
 from ... import settings
 
@@ -65,21 +70,33 @@ class Command(BaseCommand):
 on credit cards"""
 
     def add_arguments(self, parser):
-        parser.add_argument('--dry-run', action='store_true',
-            dest='dry_run', default=False,
-            help='Do not commit transactions nor submit charges to processor')
-        parser.add_argument('--no-charges', action='store_true',
-            dest='no_charges', default=False,
-            help='Do not submit charges to processor')
-        parser.add_argument('--at-time', action='store',
-            dest='at_time', default=None,
-            help='Specifies the time at which the command runs')
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=False,
+            help="Do not commit transactions nor submit charges to processor",
+        )
+        parser.add_argument(
+            "--no-charges",
+            action="store_true",
+            dest="no_charges",
+            default=False,
+            help="Do not submit charges to processor",
+        )
+        parser.add_argument(
+            "--at-time",
+            action="store",
+            dest="at_time",
+            default=None,
+            help="Specifies the time at which the command runs",
+        )
 
     def handle(self, *args, **options):
-        #pylint:disable=broad-except
-        dry_run = options['dry_run']
-        no_charges = options['no_charges']
-        end_period = datetime_or_now(options['at_time'])
+        # pylint:disable=broad-except
+        dry_run = options["dry_run"]
+        no_charges = options["no_charges"]
+        end_period = datetime_or_now(options["at_time"])
         if dry_run:
             LOGGER.warning("dry_run: no changes will be committed.")
         if no_charges:
@@ -93,12 +110,11 @@ on credit cards"""
         except Exception as err:
             LOGGER.exception("extend_subscriptions: %s", err)
         try:
-            create_charges_for_balance(
-                end_period, dry_run=dry_run or no_charges)
+            create_charges_for_balance(end_period, dry_run=dry_run or no_charges)
         except Exception as err:
             LOGGER.exception(
-                "Unable to create charges for balance on broker '%s'",
-                get_broker())
+                "Unable to create charges for balance on broker '%s'", get_broker()
+            )
         if not (dry_run or no_charges):
             # Let's complete the in flight charges after we have given
             # them time to settle.
@@ -108,5 +124,4 @@ on credit cards"""
         # Trigger 'expires soon' notifications
         expiration_periods = settings.EXPIRE_NOTICE_DAYS
         for period in expiration_periods:
-            trigger_expiration_notices(
-                end_period, nb_days=period, dry_run=dry_run)
+            trigger_expiration_notices(end_period, nb_days=period, dry_run=dry_run)

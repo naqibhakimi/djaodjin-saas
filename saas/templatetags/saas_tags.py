@@ -44,14 +44,14 @@ from ..utils import get_organization_model
 
 register = template.Library()
 
+
 @register.filter
 def active_with_provider(organization, provider):
     """
     Returns a list of active subscriptions for organization for which provider
     is the owner of the plan.
     """
-    return Subscription.objects.active_with(provider).filter(
-        organization=organization)
+    return Subscription.objects.active_with(provider).filter(organization=organization)
 
 
 @register.filter()
@@ -93,20 +93,20 @@ def iteritems(val):
 @register.filter()
 def htmlize_money(amount_unit_tuple):
     text = as_money(amount_unit_tuple.amount, amount_unit_tuple.unit)
-    look = re.match(r'(\$|€|£)?(\d(\d|,)*)(\.\d+)?(.*)', text)
+    look = re.match(r"(\$|€|£)?(\d(\d|,)*)(\.\d+)?(.*)", text)
     if look:
         unit_prefix = '<span class="unit-prefix">%s</span>' % look.group(1)
         int_amount = look.group(2)
         frac_amount = look.group(4)
         unit_suffx = '<span class="unit-suffix">%s</span>' % look.group(5)
-        if frac_amount == '.00':
+        if frac_amount == ".00":
             frac_amount = (
-                '<span class="frac-digits zero-frac-digits">%s</span>'
-                % frac_amount)
+                '<span class="frac-digits zero-frac-digits">%s</span>' % frac_amount
+            )
         else:
-            frac_amount = ('<span class="frac-digits">%s</span>' % frac_amount)
+            frac_amount = '<span class="frac-digits">%s</span>' % frac_amount
         html = unit_prefix + int_amount + frac_amount + unit_suffx
-        return  mark_safe(html)
+        return mark_safe(html)
     return text
 
 
@@ -114,9 +114,11 @@ def htmlize_money(amount_unit_tuple):
 def humanize_money(amount_unit_tuple):
     return as_money(amount_unit_tuple.amount, amount_unit_tuple.unit)
 
+
 @register.filter()
 def humanize_percent(percentage):
     return as_percentage(percentage)
+
 
 @register.filter()
 def humanize_period(period):
@@ -146,8 +148,9 @@ def is_debit(transaction, organization):
 
 @register.filter()
 def is_incomplete_month(date):
-    return ((isinstance(date, six.string_types) and not date.endswith('01'))
-        or (isinstance(date, datetime) and date.day != 1))
+    return (isinstance(date, six.string_types) and not date.endswith("01")) or (
+        isinstance(date, datetime) and date.day != 1
+    )
 
 
 @register.filter
@@ -167,7 +170,7 @@ def is_manager(request, organization):
 
 @register.filter(needs_autoescape=False)
 @stringfilter
-def md(text): #pylint: disable=invalid-name
+def md(text):  # pylint: disable=invalid-name
     # XXX safe_mode is deprecated. Should we use bleach? As shown in example:
     # https://pythonhosted.org/Markdown/reference.html#markdown
     return mark_safe(markdown.markdown(text, enable_attributes=False))
@@ -178,7 +181,7 @@ def monthly_caption(last_date):
     """returns a formatted caption describing the period whose end
     date is *last_date*."""
     if last_date.day == 1:
-        prev = last_date - timedelta(days=2) # more than one day to make sure
+        prev = last_date - timedelta(days=2)  # more than one day to make sure
         return datetime.strftime(prev, "%b'%y")
     return datetime.strftime(last_date, "%b'%y") + "*"
 
@@ -202,7 +205,8 @@ def products(subscriptions):
         # We don't use QuerySet.distinct('organization') because SQLite
         # does not support DISTINCT ON queries.
         return subscriptions.values(
-            'organization__slug', 'organization__full_name').distinct()
+            "organization__slug", "organization__full_name"
+        ).distinct()
     return []
 
 

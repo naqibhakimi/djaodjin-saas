@@ -11,28 +11,34 @@ import django_countries.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saas', '0010_0_4_0'),
+        ("saas", "0010_0_4_0"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='plan',
-            old_name='interval',
-            new_name='period_type',
+            model_name="plan",
+            old_name="interval",
+            new_name="period_type",
         ),
         migrations.RenameField(
-            model_name='plan',
-            old_name='transaction_fee',
-            new_name='broker_fee_percent',
+            model_name="plan",
+            old_name="transaction_fee",
+            new_name="broker_fee_percent",
         ),
         migrations.RenameField(
-            model_name='chargeitem',
-            old_name='invoiced_fee',
-            new_name='invoiced_processor_fee',
+            model_name="chargeitem",
+            old_name="invoiced_fee",
+            new_name="invoiced_processor_fee",
         ),
         migrations.AddField(
-            model_name='chargeitem',
-            name='invoiced_broker_fee',
-            field=models.ForeignKey(help_text='Fee transaction to broker in order to process the transaction invoiced through this charge', null=True, on_delete=django.db.models.deletion.PROTECT, related_name='invoiced_broker_fee_item', to='saas.Transaction'),
+            model_name="chargeitem",
+            name="invoiced_broker_fee",
+            field=models.ForeignKey(
+                help_text="Fee transaction to broker in order to process the transaction invoiced through this charge",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="invoiced_broker_fee_item",
+                to="saas.Transaction",
+            ),
         ),
     ]

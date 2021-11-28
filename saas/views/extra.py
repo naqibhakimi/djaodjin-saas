@@ -33,5 +33,6 @@ class PrintableChargeReceiptView(ChargeReceiptView):
 
     template: saas/printable_charge_receipt.html
     """
-    template_name = 'saas/printable_charge_receipt.html'
+
+    template_name = "saas/printable_charge_receipt.html"
     response_class = PdfTemplateResponse

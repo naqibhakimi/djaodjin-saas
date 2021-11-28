@@ -30,23 +30,50 @@ from django.conf.urls import url
 
 from ...settings import ACCT_REGEX
 from ...views.download import TransferDownloadView
-from ...views.billing import (ProcessorAuthorizeView, ProcessorDeAuthorizeView,
-    CouponListView, ImportTransactionsView, TransferListView, WithdrawView)
+from ...views.billing import (
+    ProcessorAuthorizeView,
+    ProcessorDeAuthorizeView,
+    CouponListView,
+    ImportTransactionsView,
+    TransferListView,
+    WithdrawView,
+)
 
 
 urlpatterns = [
-    url(r'^billing/(?P<organization>%s)/bank/deauthorize/' % ACCT_REGEX,
-        ProcessorDeAuthorizeView.as_view(), name='saas_deauthorize_processor'),
-    url(r'^billing/(?P<organization>%s)/bank/' % ACCT_REGEX,
-        ProcessorAuthorizeView.as_view(), name='saas_update_bank'),
-    url(r'^billing/(?P<organization>%s)/coupons/' % ACCT_REGEX,
-        CouponListView.as_view(), name='saas_coupon_list'),
-    url(r'^billing/(?P<organization>%s)/transfers/download/?' % ACCT_REGEX,
-        TransferDownloadView.as_view(), name='saas_transfers_download'),
-    url(r'^billing/(?P<organization>%s)/transfers/import/' % ACCT_REGEX,
-        ImportTransactionsView.as_view(), name='saas_import_transactions'),
-    url(r'^billing/(?P<organization>%s)/transfers/withdraw/' % ACCT_REGEX,
-        WithdrawView.as_view(), name='saas_withdraw_funds'),
-    url(r'^billing/(?P<organization>%s)/transfers/' % ACCT_REGEX,
-        TransferListView.as_view(), name='saas_transfer_info'),
+    url(
+        r"^billing/(?P<organization>%s)/bank/deauthorize/" % ACCT_REGEX,
+        ProcessorDeAuthorizeView.as_view(),
+        name="saas_deauthorize_processor",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/bank/" % ACCT_REGEX,
+        ProcessorAuthorizeView.as_view(),
+        name="saas_update_bank",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/coupons/" % ACCT_REGEX,
+        CouponListView.as_view(),
+        name="saas_coupon_list",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/transfers/download/?" % ACCT_REGEX,
+        TransferDownloadView.as_view(),
+        name="saas_transfers_download",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/transfers/import/" % ACCT_REGEX,
+        ImportTransactionsView.as_view(),
+        name="saas_import_transactions",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/transfers/withdraw/" % ACCT_REGEX,
+        WithdrawView.as_view(),
+        name="saas_withdraw_funds",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/transfers/" % ACCT_REGEX,
+        TransferListView.as_view(),
+        name="saas_transfer_info",
+    ),
 ]

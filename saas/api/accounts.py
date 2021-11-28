@@ -28,12 +28,13 @@ from rest_framework.generics import ListAPIView
 from .organizations import OrganizationQuerysetMixin
 from .serializers import OrganizationSerializer
 from .. import filters
-from ..mixins import (OrganizationSmartListMixin, UserSmartListMixin)
+from ..mixins import OrganizationSmartListMixin, UserSmartListMixin
 from ..pagination import TypeaheadPagination
 from ..utils import get_user_serializer
 
 
-#pylint: disable=no-init
+# pylint: disable=no-init
+
 
 def get_order_func(fields):
     """
@@ -43,26 +44,31 @@ def get_order_func(fields):
     When a field name is preceeded by '-', the order is reversed.
     """
     if len(fields) == 1:
-        if fields[0].startswith('-'):
+        if fields[0].startswith("-"):
             field_name = fields[0][1:]
             return lambda left, right: (
-                getattr(left, field_name) > getattr(right, field_name))
+                getattr(left, field_name) > getattr(right, field_name)
+            )
         field_name = fields[0]
         return lambda left, right: (
-            getattr(left, field_name) < getattr(right, field_name))
-    if fields[0].startswith('-'):
+            getattr(left, field_name) < getattr(right, field_name)
+        )
+    if fields[0].startswith("-"):
         field_name = fields[0][1:]
         return lambda left, right: (
-            getattr(left, field_name) > getattr(right, field_name) or
-            get_order_func(fields[1:])(left, right))
+            getattr(left, field_name) > getattr(right, field_name)
+            or get_order_func(fields[1:])(left, right)
+        )
     field_name = fields[0]
     return lambda left, right: (
-        getattr(left, field_name) < getattr(right, field_name) or
-        get_order_func(fields[1:])(left, right))
+        getattr(left, field_name) < getattr(right, field_name)
+        or get_order_func(fields[1:])(left, right)
+    )
 
 
-class AccountsTypeaheadAPIView(OrganizationSmartListMixin,
-                            OrganizationQuerysetMixin, ListAPIView):
+class AccountsTypeaheadAPIView(
+    OrganizationSmartListMixin, OrganizationQuerysetMixin, ListAPIView
+):
     """
     Searches profile and user accounts
 
@@ -107,6 +113,7 @@ class AccountsTypeaheadAPIView(OrganizationSmartListMixin,
             }]
         }
     """
+
     serializer_class = OrganizationSerializer
     user_model = get_user_model()
     pagination_class = TypeaheadPagination
@@ -115,17 +122,19 @@ class AccountsTypeaheadAPIView(OrganizationSmartListMixin,
         # All users not already picked up as an Organization.
         return self.user_model.objects.filter(is_active=True).exclude(
             pk__in=self.user_model.objects.extra(
-                tables=['saas_organization'],
-                where=["%s = slug" % self.user_model.USERNAME_FIELD ]).values('pk'))
+                tables=["saas_organization"],
+                where=["%s = slug" % self.user_model.USERNAME_FIELD],
+            ).values("pk")
+        )
 
     def list(self, request, *args, **kwargs):
-        #pylint:disable=too-many-locals,too-many-statements
+        # pylint:disable=too-many-locals,too-many-statements
         organizations_queryset = self.filter_queryset(self.get_queryset())
         organizations_page = self.paginate_queryset(organizations_queryset)
         # XXX When we use a `rest_framework.PageNumberPagination`,
         # it will hold a reference to the page created by a `DjangoPaginator`.
         # The `LimitOffsetPagination` paginator holds its own count.
-        if hasattr(self.paginator, 'page'):
+        if hasattr(self.paginator, "page"):
             organizations_count = self.paginator.page.paginator.count
         else:
             organizations_count = self.paginator.count
@@ -134,13 +143,16 @@ class AccountsTypeaheadAPIView(OrganizationSmartListMixin,
         users_page = self.paginate_queryset(users_queryset)
         # Since we run a second `paginate_queryset`, the paginator.count
         # is not the number of users.
-        if hasattr(self.paginator, 'page'):
+        if hasattr(self.paginator, "page"):
             self.paginator.page.paginator.count += organizations_count
         else:
             self.paginator.count += organizations_count
 
-        order_func = get_order_func(filters.OrderingFilter().get_ordering(
-            self.request, organizations_queryset, self))
+        order_func = get_order_func(
+            filters.OrderingFilter().get_ordering(
+                self.request, organizations_queryset, self
+            )
+        )
 
         # XXX merge `users_page` into page.
         page = []
@@ -193,8 +205,9 @@ class AccountsTypeaheadAPIView(OrganizationSmartListMixin,
         return self.get_paginated_response(serializer.data)
 
 
-class ProfilesTypeaheadAPIView(OrganizationSmartListMixin,
-                            OrganizationQuerysetMixin, ListAPIView):
+class ProfilesTypeaheadAPIView(
+    OrganizationSmartListMixin, OrganizationQuerysetMixin, ListAPIView
+):
     """
     Searches profiles
 
@@ -238,6 +251,7 @@ class ProfilesTypeaheadAPIView(OrganizationSmartListMixin,
             }]
         }
     """
+
     serializer_class = OrganizationSerializer
     pagination_class = TypeaheadPagination
 
@@ -257,8 +271,7 @@ class UserQuerysetMixin(object):
         return get_user_model().objects.all()
 
 
-class UsersTypeaheadAPIView(UserSmartListMixin, UserQuerysetMixin,
-                            ListAPIView):
+class UsersTypeaheadAPIView(UserSmartListMixin, UserQuerysetMixin, ListAPIView):
     """
     Searches users
 
@@ -305,5 +318,6 @@ class UsersTypeaheadAPIView(UserSmartListMixin, UserQuerysetMixin,
             ]
         }
     """
+
     serializer_class = get_user_serializer()
     pagination_class = TypeaheadPagination

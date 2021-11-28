@@ -31,9 +31,9 @@ from saas.utils import get_organization_model
 class OrganizationListView(ListView):
 
     model = get_organization_model()
-    template_name = 'organization_list_index.html'
+    template_name = "organization_list_index.html"
 
 
 class UserProfileView(UserMixin, TemplateView):
 
-    template_name = 'accounts/profile.html'
+    template_name = "accounts/profile.html"

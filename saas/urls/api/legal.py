@@ -32,6 +32,9 @@ from ...api.users import AgreementSignAPIView
 from ... import settings
 
 urlpatterns = [
-    url(r'^legal/(?P<agreement>%s)/sign/$' % settings.ACCT_REGEX,
-        AgreementSignAPIView.as_view(), name='saas_api_sign_agreement'),
+    url(
+        r"^legal/(?P<agreement>%s)/sign/$" % settings.ACCT_REGEX,
+        AgreementSignAPIView.as_view(),
+        name="saas_api_sign_agreement",
+    ),
 ]

@@ -45,14 +45,19 @@ class SlugTitleMixin(object):
     """
     Generate a unique slug from title on ``save()`` when none is specified.
     """
-    def save(self, force_insert=False, force_update=False,
-             using=None, update_fields=None):
-        if self.slug: #pylint:disable=access-member-before-definition
+
+    def save(
+        self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        if self.slug:  # pylint:disable=access-member-before-definition
             # serializer will set created slug to '' instead of None.
             return super(SlugTitleMixin, self).save(
-                force_insert=force_insert, force_update=force_update,
-                using=using, update_fields=update_fields)
-        max_length = self._meta.get_field('slug').max_length
+                force_insert=force_insert,
+                force_update=force_update,
+                using=using,
+                update_fields=update_fields,
+            )
+        max_length = self._meta.get_field("slug").max_length
         slug_base = slugify(self.title)
         if len(slug_base) > max_length:
             slug_base = slug_base[:max_length]
@@ -61,18 +66,25 @@ class SlugTitleMixin(object):
             try:
                 with transaction.atomic():
                     return super(SlugTitleMixin, self).save(
-                        force_insert=force_insert, force_update=force_update,
-                        using=using, update_fields=update_fields)
+                        force_insert=force_insert,
+                        force_update=force_update,
+                        using=using,
+                        update_fields=update_fields,
+                    )
             except IntegrityError as err:
-                if 'uniq' not in str(err).lower():
+                if "uniq" not in str(err).lower():
                     raise
-                suffix = '-%s' % generate_random_slug(length=7)
+                suffix = "-%s" % generate_random_slug(length=7)
                 if len(slug_base) + len(suffix) > max_length:
-                    self.slug = slug_base[:(max_length - len(suffix))] + suffix
+                    self.slug = slug_base[: (max_length - len(suffix))] + suffix
                 else:
                     self.slug = slug_base + suffix
-        raise ValidationError({'detail':
-            "Unable to create a unique URL slug from title '%s'" % self.title})
+        raise ValidationError(
+            {
+                "detail": "Unable to create a unique URL slug from title '%s'"
+                % self.title
+            }
+        )
 
 
 def parse_tz(tzone):
@@ -111,16 +123,16 @@ def datetime_to_utctimestamp(dtime_at, epoch=None):
 
 def extract_full_exception_stack(err):
     tbk = sys.exc_info()[2]
-    message = str(err) + '\nTraceback (most recent call last):'
+    message = str(err) + "\nTraceback (most recent call last):"
     for item in reversed(inspect.getouterframes(tbk.tb_frame)[1:]):
         message += ' File "{1}", line {2}, in {3}\n'.format(*item)
         for line in item[4]:
-            message += ' ' + line.lstrip()
+            message += " " + line.lstrip()
     for item in inspect.getinnerframes(tbk):
         message += ' File "{1}", line {2}, in {3}\n'.format(*item)
         for line in item[4]:
-            message += ' ' + line.lstrip()
-    message += '%s: %s' % (err.__class__, err)
+            message += " " + line.lstrip()
+    message += "%s: %s" % (err.__class__, err)
     return message
 
 
@@ -129,7 +141,7 @@ def full_name_natural_split(full_name, middle_initials=True):
     This function splits a full name into a natural first name, last name
     and middle initials.
     """
-    parts = full_name.strip().split(' ')
+    parts = full_name.strip().split(" ")
     first_name = ""
     if parts:
         first_name = parts.pop(0)
@@ -138,8 +150,12 @@ def full_name_natural_split(full_name, middle_initials=True):
     last_name = ""
     if parts:
         last_name = parts.pop()
-    if (last_name.lower() == 'i' or last_name.lower() == 'ii'
-        or last_name.lower() == 'iii' and parts):
+    if (
+        last_name.lower() == "i"
+        or last_name.lower() == "ii"
+        or last_name.lower() == "iii"
+        and parts
+    ):
         last_name = parts.pop() + " " + last_name
     if middle_initials:
         mid_name = ""
@@ -162,11 +178,12 @@ def generate_random_slug(length=40, prefix=None):
     # make sure the slug starts with a letter in case it is used as a resource
     # name (variable or database).
     suffix = random.choice("abcdef")
-    suffix += "".join([random.choice("abcdef0123456789")
-                      for val in range(length - 1)]) # Generated coupon codes
-                             # are stored as ``Transaction.event_id`` with
-                             # a 'cpn_' prefix. The total event_id must be less
-                             # than 50 chars.
+    suffix += "".join(
+        [random.choice("abcdef0123456789") for val in range(length - 1)]
+    )  # Generated coupon codes
+    # are stored as ``Transaction.event_id`` with
+    # a 'cpn_' prefix. The total event_id must be less
+    # than 50 chars.
     if prefix:
         return str(prefix) + suffix
     return suffix
@@ -174,14 +191,16 @@ def generate_random_slug(length=40, prefix=None):
 
 def get_organization_model():
     # delayed import so we can load ``OrganizationMixinBase`` in django.conf
-    from . import settings #pylint:disable=import-outside-toplevel
-    return get_model_class(settings.ORGANIZATION_MODEL, 'ORGANIZATION_MODEL')
+    from . import settings  # pylint:disable=import-outside-toplevel
+
+    return get_model_class(settings.ORGANIZATION_MODEL, "ORGANIZATION_MODEL")
 
 
 def get_role_model():
     # delayed import so we can load ``OrganizationMixinBase`` in django.conf
-    from . import settings #pylint:disable=import-outside-toplevel
-    return get_model_class(settings.ROLE_RELATION, 'ROLE_RELATION')
+    from . import settings  # pylint:disable=import-outside-toplevel
+
+    return get_model_class(settings.ROLE_RELATION, "ROLE_RELATION")
 
 
 def get_role_serializer():
@@ -189,6 +208,7 @@ def get_role_serializer():
     Returns the role serializer model that is active in this project.
     """
     from . import settings
+
     return import_string(settings.ROLE_SERIALIZER)
 
 
@@ -197,6 +217,7 @@ def get_user_serializer():
     Returns the user serializer model that is active in this project.
     """
     from . import settings
+
     return import_string(settings.USER_SERIALIZER)
 
 
@@ -206,8 +227,7 @@ def start_of_day(dtime_at=None):
     time 00:00:00 for a given datetime
     """
     dtime_at = datetime_or_now(dtime_at)
-    start = datetime.datetime(dtime_at.year, dtime_at.month,
-        dtime_at.day)
+    start = datetime.datetime(dtime_at.year, dtime_at.month, dtime_at.day)
     tz_ob = get_current_timezone()
     if tz_ob:
         start = tz_ob.localize(start)
@@ -215,19 +235,19 @@ def start_of_day(dtime_at=None):
 
 
 def update_context_urls(context, urls):
-    if 'urls' in context:
+    if "urls" in context:
         for key, val in six.iteritems(urls):
-            if key in context['urls']:
+            if key in context["urls"]:
                 if isinstance(val, dict):
-                    context['urls'][key].update(val)
+                    context["urls"][key].update(val)
                 else:
                     # Because organization_create url is added in this mixin
                     # and in ``OrganizationRedirectView``.
-                    context['urls'][key] = val
+                    context["urls"][key] = val
             else:
-                context['urls'].update({key: val})
+                context["urls"].update({key: val})
     else:
-        context.update({'urls': urls})
+        context.update({"urls": urls})
     return context
 
 
@@ -247,25 +267,27 @@ def validate_redirect_url(next_url, sub=False, **kwargs):
     parts = six.moves.urllib.parse.urlparse(next_url)
     if parts.netloc:
         domain, _ = split_domain_port(parts.netloc)
-        allowed_hosts = ['*'] if django_settings.DEBUG \
-            else django_settings.ALLOWED_HOSTS
+        allowed_hosts = (
+            ["*"] if django_settings.DEBUG else django_settings.ALLOWED_HOSTS
+        )
         if not (domain and validate_host(domain, allowed_hosts)):
             return None
     path = parts.path
     if sub:
-        from . import settings #pylint:disable=import-outside-toplevel
+        from . import settings  # pylint:disable=import-outside-toplevel
+
         try:
             # We replace all ':slug/' by '%(slug)s/' so that we can further
             # create an instantiated url through Python string expansion.
-            path = re.sub(r':(%s)/' % settings.ACCT_REGEX,
-                r'%(\1)s/', path) % kwargs
+            path = re.sub(r":(%s)/" % settings.ACCT_REGEX, r"%(\1)s/", path) % kwargs
         except KeyError:
             # We don't have all keys necessary. A safe defaults is to remove
             # them. Most likely a redirect URL is present to pick between
             # multiple choices.
-            path = re.sub(r':(%s)/' % settings.ACCT_REGEX, '', path)
-    return six.moves.urllib.parse.urlunparse(("", "", path,
-        parts.params, parts.query, parts.fragment))
+            path = re.sub(r":(%s)/" % settings.ACCT_REGEX, "", path)
+    return six.moves.urllib.parse.urlunparse(
+        ("", "", path, parts.params, parts.query, parts.fragment)
+    )
 
 
 def update_db_row(instance, form):
@@ -296,9 +318,10 @@ def fill_form_errors(form, err):
             elif field == api_settings.NON_FIELD_ERRORS_KEY:
                 form.add_error(NON_FIELD_ERRORS, msg)
             else:
-                form.add_error(NON_FIELD_ERRORS,
-                    _("No field '%(field)s': %(msg)s" % {
-                    'field': field, 'msg': msg}))
+                form.add_error(
+                    NON_FIELD_ERRORS,
+                    _("No field '%(field)s': %(msg)s" % {"field": field, "msg": msg}),
+                )
 
 
 def handle_uniq_error(err, renames=None):
@@ -309,30 +332,38 @@ def handle_uniq_error(err, renames=None):
     err_msg = str(err).splitlines().pop()
     # PostgreSQL unique constraint.
     look = re.match(
-        r'DETAIL:\s+Key \(([a-z_]+(, [a-z_]+)*)\)=\(.*\) already exists\.',
-        err_msg)
+        r"DETAIL:\s+Key \(([a-z_]+(, [a-z_]+)*)\)=\(.*\) already exists\.", err_msg
+    )
     if look:
         # XXX Do we need to include '.' in pattern as done later on?
-        field_names = look.group(1).split(',')
+        field_names = look.group(1).split(",")
     else:
         look = re.match(
-          r'DETAIL:\s+Key \(lower\(([a-z_]+)::text\)\)=\(.*\) already exists\.',
-            err_msg)
+            r"DETAIL:\s+Key \(lower\(([a-z_]+)::text\)\)=\(.*\) already exists\.",
+            err_msg,
+        )
         if look:
             field_names = [look.group(1)]
         else:
             # SQLite unique constraint.
-            look = re.match(r'UNIQUE constraint failed: '\
-                r'(?P<cols>[a-z_]+\.[a-z_]+(, [a-z_]+\.[a-z_]+)*)', err_msg)
+            look = re.match(
+                r"UNIQUE constraint failed: "
+                r"(?P<cols>[a-z_]+\.[a-z_]+(, [a-z_]+\.[a-z_]+)*)",
+                err_msg,
+            )
             if not look:
                 # On CentOS 7, installed sqlite 3.7.17
                 # returns differently-formatted error message.
                 look = re.match(
-                    r'column(s)? (?P<cols>[a-z_]+(\.[a-z_]+)?'\
-                    r'(, [a-z_]+(\.[a-z_]+)?)*) (is|are) not unique', err_msg)
+                    r"column(s)? (?P<cols>[a-z_]+(\.[a-z_]+)?"
+                    r"(, [a-z_]+(\.[a-z_]+)?)*) (is|are) not unique",
+                    err_msg,
+                )
             if look:
-                field_names = [field_name.split('.')[-1]
-                    for field_name in look.group('cols').split(',')]
+                field_names = [
+                    field_name.split(".")[-1]
+                    for field_name in look.group("cols").split(",")
+                ]
     if field_names:
         renamed_fields = []
         for field_name in field_names:
@@ -341,33 +372,36 @@ def handle_uniq_error(err, renames=None):
             renamed_fields += [field_name]
         # XXX retrieves `saas_coupon.code` duplicates
         field_name = renamed_fields[-1]
-        raise ValidationError({field_name:
-            _("This %(field)s is already taken.") % {'field': field_name}})
+        raise ValidationError(
+            {field_name: _("This %(field)s is already taken.") % {"field": field_name}}
+        )
     raise err
 
 
 def get_picture_storage(request, account=None, **kwargs):
     # delayed import so we can load ``OrganizationMixinBase`` in django.conf
-    from . import settings #pylint:disable=import-outside-toplevel
+    from . import settings  # pylint:disable=import-outside-toplevel
+
     if settings.PICTURE_STORAGE_CALLABLE:
         try:
             return import_string(settings.PICTURE_STORAGE_CALLABLE)(
-                request, account=account, **kwargs)
+                request, account=account, **kwargs
+            )
         except ImportError:
             pass
     return default_storage
 
 
 # XXX same prototype as djaodjin-multitier.mixins.build_absolute_uri
-def build_absolute_uri(request, location='/', provider=None, with_scheme=True):
+def build_absolute_uri(request, location="/", provider=None, with_scheme=True):
     # delayed import so we can load ``OrganizationMixinBase`` in django.conf
-    from . import settings #pylint:disable=import-outside-toplevel
+    from . import settings  # pylint:disable=import-outside-toplevel
+
     if settings.BUILD_ABSOLUTE_URI_CALLABLE:
         try:
-            return import_string(
-                settings.BUILD_ABSOLUTE_URI_CALLABLE)(request,
-                    location=location, provider=provider,
-                    with_scheme=with_scheme)
+            return import_string(settings.BUILD_ABSOLUTE_URI_CALLABLE)(
+                request, location=location, provider=provider, with_scheme=with_scheme
+            )
         except ImportError:
             pass
     return request.build_absolute_uri(location)

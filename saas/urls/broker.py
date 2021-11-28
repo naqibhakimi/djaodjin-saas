@@ -31,27 +31,45 @@ from django.conf.urls import url
 from .. import settings
 from ..views.metrics import BalancesView
 from ..views.billing import AllTransactions, ChargeListView, VTChargeView
-from ..views.download import (BalancesDownloadView, RegisteredDownloadView,
-    TransactionDownloadView)
+from ..views.download import (
+    BalancesDownloadView,
+    RegisteredDownloadView,
+    TransactionDownloadView,
+)
 
 urlpatterns = [
-    url(r'^billing/charges/',
-        ChargeListView.as_view(), name='saas_charges'),
-    url(r'^billing/transactions/((?P<selector>%s)/)?download/?',
+    url(r"^billing/charges/", ChargeListView.as_view(), name="saas_charges"),
+    url(
+        r"^billing/transactions/((?P<selector>%s)/)?download/?",
         TransactionDownloadView.as_view(),
-        name='saas_transactions_download'),
-    url(r'^billing/transactions/((?P<selector>%s)/)?' % settings.SELECTOR_RE,
-        AllTransactions.as_view(), name='saas_broker_transactions'),
+        name="saas_transactions_download",
+    ),
+    url(
+        r"^billing/transactions/((?P<selector>%s)/)?" % settings.SELECTOR_RE,
+        AllTransactions.as_view(),
+        name="saas_broker_transactions",
+    ),
     # Organization refers to the subscriber in the following URL pattern.
-    url(r'^billing/(?P<customer>%s)/vtcharge/' % settings.ACCT_REGEX,
-        VTChargeView.as_view(), name='saas_organization_vtcharge'),
-    url(r'^metrics/balances/(?P<report>%s)/((?P<year>\d\d\d\d)/)?download/?'
+    url(
+        r"^billing/(?P<customer>%s)/vtcharge/" % settings.ACCT_REGEX,
+        VTChargeView.as_view(),
+        name="saas_organization_vtcharge",
+    ),
+    url(
+        r"^metrics/balances/(?P<report>%s)/((?P<year>\d\d\d\d)/)?download/?"
         % settings.ACCT_REGEX,
-        BalancesDownloadView.as_view(), name='saas_balances_download'),
-    url(r'^metrics/balances/(?P<report>%s)/((?P<year>\d\d\d\d)/)?'
+        BalancesDownloadView.as_view(),
+        name="saas_balances_download",
+    ),
+    url(
+        r"^metrics/balances/(?P<report>%s)/((?P<year>\d\d\d\d)/)?"
         % settings.ACCT_REGEX,
-        BalancesView.as_view(), name='saas_balance'),
-    url(r'^metrics/registered/download/?',
+        BalancesView.as_view(),
+        name="saas_balance",
+    ),
+    url(
+        r"^metrics/registered/download/?",
         RegisteredDownloadView.as_view(),
-        name='saas_subscriber_pipeline_download_registered'),
+        name="saas_subscriber_pipeline_download_registered",
+    ),
 ]

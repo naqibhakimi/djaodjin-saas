@@ -11,18 +11,23 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('saas', '0003_balanceline_is_positive'),
+        ("saas", "0003_balanceline_is_positive"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='charge',
-            name='card_name',
+            model_name="charge",
+            name="card_name",
             field=models.CharField(max_length=50, null=True),
         ),
         migrations.AddField(
-            model_name='charge',
-            name='created_by',
-            field=models.ForeignKey(db_column='user_id', null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
+            model_name="charge",
+            name="created_by",
+            field=models.ForeignKey(
+                db_column="user_id",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

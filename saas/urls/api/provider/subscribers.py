@@ -29,29 +29,41 @@ API URLs for a provider subcribers.
 from django.conf.urls import url
 
 from ....api.organizations import SubscribersAPIView, InactiveSubscribersAPIView
-from ....api.subscriptions import (ProvidedSubscriptionsAPIView,
-    PlanSubscriptionDetailAPIView)
+from ....api.subscriptions import (
+    ProvidedSubscriptionsAPIView,
+    PlanSubscriptionDetailAPIView,
+)
 from ....settings import ACCT_REGEX, VERIFICATION_KEY_RE
 from ....api.subscriptions import SubscriptionRequestAcceptAPIView
 
 
 urlpatterns = [
-    url(r'^profile/(?P<organization>%s)/subscribers/accept/'\
-        '(?P<request_key>%s)/' % (ACCT_REGEX, VERIFICATION_KEY_RE),
+    url(
+        r"^profile/(?P<organization>%s)/subscribers/accept/"
+        "(?P<request_key>%s)/" % (ACCT_REGEX, VERIFICATION_KEY_RE),
         SubscriptionRequestAcceptAPIView.as_view(),
-        name='saas_api_subscription_grant_accept'),
-    url(r'^profile/(?P<organization>%s)/subscribers/inactive/?' % ACCT_REGEX,
+        name="saas_api_subscription_grant_accept",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/subscribers/inactive/?" % ACCT_REGEX,
         InactiveSubscribersAPIView.as_view(),
-        name='saas_api_inactive_subscribers'),
-    url(r'^profile/(?P<organization>%s)/subscribers/?' % ACCT_REGEX,
-        SubscribersAPIView.as_view(), name='saas_api_subscribers'),
-    url(r'^profile/(?P<organization>%s)/plans/(?P<plan>%s)/subscriptions/'\
-    '(?P<subscriber>%s)/'
-        % (ACCT_REGEX, ACCT_REGEX, ACCT_REGEX),
+        name="saas_api_inactive_subscribers",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/subscribers/?" % ACCT_REGEX,
+        SubscribersAPIView.as_view(),
+        name="saas_api_subscribers",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/plans/(?P<plan>%s)/subscriptions/"
+        "(?P<subscriber>%s)/" % (ACCT_REGEX, ACCT_REGEX, ACCT_REGEX),
         PlanSubscriptionDetailAPIView.as_view(),
-        name='saas_api_plan_subscription'),
-    url(r'^profile/(?P<organization>%s)/plans/(?P<plan>%s)/subscriptions/'
+        name="saas_api_plan_subscription",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/plans/(?P<plan>%s)/subscriptions/"
         % (ACCT_REGEX, ACCT_REGEX),
         ProvidedSubscriptionsAPIView.as_view(),
-        name='saas_api_plan_subscriptions'),
+        name="saas_api_plan_subscriptions",
+    ),
 ]

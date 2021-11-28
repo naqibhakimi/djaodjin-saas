@@ -34,34 +34,36 @@ import testsite.templatetags.testsite_tags
 
 
 def environment(**options):
-    options['extensions'] = ['jinja2.ext.i18n']
+    options["extensions"] = ["jinja2.ext.i18n"]
 
     env = Jinja2Environment(**options)
 
     # i18n
-    env.install_gettext_callables(gettext=gettext, ngettext=ngettext,
-        newstyle=True)
+    env.install_gettext_callables(gettext=gettext, ngettext=ngettext, newstyle=True)
 
     # Generic filters to render pages
-    env.filters['is_authenticated'] = \
-        testsite.templatetags.testsite_tags.is_authenticated
-    env.filters['iteritems'] = saas.templatetags.saas_tags.iteritems
-    env.filters['isoformat'] = saas.templatetags.saas_tags.isoformat
-    env.filters['messages'] = testsite.templatetags.testsite_tags.messages
-    env.filters['pluralize'] = django.template.defaultfilters.pluralize
-    env.filters['to_json'] = testsite.templatetags.testsite_tags.to_json
-    env.filters['url_profile'] = testsite.templatetags.testsite_tags.url_profile
+    env.filters[
+        "is_authenticated"
+    ] = testsite.templatetags.testsite_tags.is_authenticated
+    env.filters["iteritems"] = saas.templatetags.saas_tags.iteritems
+    env.filters["isoformat"] = saas.templatetags.saas_tags.isoformat
+    env.filters["messages"] = testsite.templatetags.testsite_tags.messages
+    env.filters["pluralize"] = django.template.defaultfilters.pluralize
+    env.filters["to_json"] = testsite.templatetags.testsite_tags.to_json
+    env.filters["url_profile"] = testsite.templatetags.testsite_tags.url_profile
 
     # Specific to SaaS
-    env.filters['humanize_money'] = saas.templatetags.saas_tags.humanize_money
-    env.filters['humanize_period'] = saas.templatetags.saas_tags.humanize_period
-    env.filters['date_in_future'] = saas.templatetags.saas_tags.date_in_future
-    env.filters['md'] = saas.templatetags.saas_tags.md
-    env.filters['describe'] = saas.templatetags.saas_tags.describe
+    env.filters["humanize_money"] = saas.templatetags.saas_tags.humanize_money
+    env.filters["humanize_period"] = saas.templatetags.saas_tags.humanize_period
+    env.filters["date_in_future"] = saas.templatetags.saas_tags.date_in_future
+    env.filters["md"] = saas.templatetags.saas_tags.md
+    env.filters["describe"] = saas.templatetags.saas_tags.describe
 
-    env.globals.update({
-        'VUEJS': (settings.JS_FRAMEWORK == 'vuejs'),
-        'DATETIME_FORMAT': "MMM dd, yyyy",
-    })
+    env.globals.update(
+        {
+            "VUEJS": (settings.JS_FRAMEWORK == "vuejs"),
+            "DATETIME_FORMAT": "MMM dd, yyyy",
+        }
+    )
 
     return env

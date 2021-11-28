@@ -34,22 +34,33 @@ from ....views.download import BillingStatementDownloadView
 
 try:
     from ....views.extra import PrintableChargeReceiptView
+
     urlpatterns = [
-        url(r'^billing/(?P<organization>%s)/'\
-'receipt/(?P<charge>[a-zA-Z0-9_]+)/printable/' % ACCT_REGEX,
+        url(
+            r"^billing/(?P<organization>%s)/"
+            "receipt/(?P<charge>[a-zA-Z0-9_]+)/printable/" % ACCT_REGEX,
             PrintableChargeReceiptView.as_view(),
-            name='saas_printable_charge_receipt'),
-        ]
+            name="saas_printable_charge_receipt",
+        ),
+    ]
 except ImportError:
     urlpatterns = []
 
 urlpatterns += [
-    url(r'^billing/(?P<organization>%s)/receipt/(?P<charge>[a-zA-Z0-9_]+)$'
+    url(
+        r"^billing/(?P<organization>%s)/receipt/(?P<charge>[a-zA-Z0-9_]+)$"
         % ACCT_REGEX,
-        ChargeReceiptView.as_view(), name='saas_charge_receipt'),
-    url(r'^billing/(?P<organization>%s)/history/download/?' % ACCT_REGEX,
+        ChargeReceiptView.as_view(),
+        name="saas_charge_receipt",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/history/download/?" % ACCT_REGEX,
         BillingStatementDownloadView.as_view(),
-        name='saas_statement_download'),
-    url(r'^billing/(?P<organization>%s)/history/' % ACCT_REGEX,
-        BillingStatementView.as_view(), name='saas_billing_info'),
+        name="saas_statement_download",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/history/" % ACCT_REGEX,
+        BillingStatementView.as_view(),
+        name="saas_billing_info",
+    ),
 ]

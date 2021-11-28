@@ -34,19 +34,24 @@ from ...models import Organization
 class Command(BaseCommand):
     help = """Delete the (customer) account associated with an organization
 from the payment processor service."""
-    args = 'regex'
+    args = "regex"
 
     def add_arguments(self, parser):
-        parser.add_argument('-n', action='store_true', dest='no_execute',
-            default=False, help='Print but do not execute')
+        parser.add_argument(
+            "-n",
+            action="store_true",
+            dest="no_execute",
+            default=False,
+            help="Print but do not execute",
+        )
 
     def handle(self, *args, **options):
-        pat = r'.*'
+        pat = r".*"
         if args:
             pat = args[0]
         for cust in get_processor_backend(
-                provider=Organization.objects.get(pk=settings.PROCESSOR_ID
-                )).list_customers(pat):
-            sys.stdout.write('%s %s\n' % (str(cust.id), str(cust.description)))
-            if not options['no_execute']:
+            provider=Organization.objects.get(pk=settings.PROCESSOR_ID)
+        ).list_customers(pat):
+            sys.stdout.write("%s %s\n" % (str(cust.id), str(cust.description)))
+            if not options["no_execute"]:
                 cust.delete()

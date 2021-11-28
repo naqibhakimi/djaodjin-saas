@@ -36,7 +36,6 @@ from ..compat import import_string, python_2_unicode_compatible
 
 @python_2_unicode_compatible
 class ProcessorError(RuntimeError):
-
     def __init__(self, message, backend_except=None):
         super(ProcessorError, self).__init__(message)
         self.backend_except = backend_except
@@ -60,47 +59,50 @@ class ProcessorSetupError(ProcessorError):
 
     def __init__(self, message, provider, backend_except=None):
         super(ProcessorSetupError, self).__init__(
-            message, backend_except=backend_except)
+            message, backend_except=backend_except
+        )
         self.provider = provider
 
     def __str__(self):
         result = super(ProcessorSetupError, self).__str__()
-        result += '(provider: %s)' % str(self.provider)
+        result += "(provider: %s)" % str(self.provider)
         return result
 
 
 @python_2_unicode_compatible
 class CardError(ProcessorError):
-
-    def __init__(self, message, code,
-                 charge_processor_key=None, backend_except=None):
+    def __init__(self, message, code, charge_processor_key=None, backend_except=None):
         super(CardError, self).__init__(message, backend_except=backend_except)
         self.code = code
         self.charge_processor_key = charge_processor_key
 
     def __str__(self):
-        if self.code == 'card_declined':
-            return str(_("Your card was declined. We are taking your security"\
-" seriously. When we submit a charge to your bank, they have automated"\
-" systems that determine whether or not to accept the charge. Check you"\
-" entered the card  number, expiration date, CVC and address correctly."\
-" If problems persist, please contact your bank."))
+        if self.code == "card_declined":
+            return str(
+                _(
+                    "Your card was declined. We are taking your security"
+                    " seriously. When we submit a charge to your bank, they have automated"
+                    " systems that determine whether or not to accept the charge. Check you"
+                    " entered the card  number, expiration date, CVC and address correctly."
+                    " If problems persist, please contact your bank."
+                )
+            )
         return super(CardError, self).__str__()
 
 
 def load_backend(path):
-    dot_pos = path.rfind('.')
-    module, attr = path[:dot_pos], path[dot_pos + 1:]
+    dot_pos = path.rfind(".")
+    module, attr = path[:dot_pos], path[dot_pos + 1 :]
     try:
         mod = import_module(module)
     except (ImportError, ValueError) as err:
-        raise ImproperlyConfigured(
-            'Error importing backend %s: "%s"' % (path, err))
+        raise ImproperlyConfigured('Error importing backend %s: "%s"' % (path, err))
     try:
         cls = getattr(mod, attr)
     except AttributeError:
-        raise ImproperlyConfigured('Module "%s" does not define a "%s"'\
-' backend' % (module, attr))
+        raise ImproperlyConfigured(
+            'Module "%s" does not define a "%s"' " backend" % (module, attr)
+        )
     return cls()
 
 
@@ -109,5 +111,5 @@ def get_processor_backend(provider):
         func = import_string(settings.PROCESSOR_BACKEND_CALLABLE)
         processor_backend = func(provider)
     else:
-        processor_backend = load_backend(settings.PROCESSOR['BACKEND'])
+        processor_backend = load_backend(settings.PROCESSOR["BACKEND"])
     return processor_backend

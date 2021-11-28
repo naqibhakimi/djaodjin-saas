@@ -28,6 +28,7 @@ from ..views import StripeWebhook
 from ....settings import PROCESSOR_HOOK_URL
 
 urlpatterns = [
-    url(r'^%s' % PROCESSOR_HOOK_URL,
-        StripeWebhook.as_view(), name='saas_processor_hook')
+    url(
+        r"^%s" % PROCESSOR_HOOK_URL, StripeWebhook.as_view(), name="saas_processor_hook"
+    )
 ]

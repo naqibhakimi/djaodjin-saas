@@ -33,6 +33,9 @@ from ..views.users import ProductListView
 
 
 urlpatterns = [
-    url(r'users/(?P<user>%s)/roles/' % ACCT_REGEX,
-        ProductListView.as_view(), name='saas_user_product_list'),
+    url(
+        r"users/(?P<user>%s)/roles/" % ACCT_REGEX,
+        ProductListView.as_view(),
+        name="saas_user_product_list",
+    ),
 ]

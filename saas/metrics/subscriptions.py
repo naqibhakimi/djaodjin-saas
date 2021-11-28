@@ -38,12 +38,12 @@ def active_subscribers(plan, from_date=None, tz=None):
     """
     List of active subscribers for a *plan*.
     """
-    #pylint:disable=invalid-name
+    # pylint:disable=invalid-name
     values = []
-    for end_period in convert_dates_to_utc(month_periods(
-                            from_date=from_date, tz=tz)):
-        values.append([end_period,
-            Subscription.objects.active_at(end_period, plan=plan).count()])
+    for end_period in convert_dates_to_utc(month_periods(from_date=from_date, tz=tz)):
+        values.append(
+            [end_period, Subscription.objects.active_at(end_period, plan=plan).count()]
+        )
     return values
 
 
@@ -51,16 +51,22 @@ def churn_subscribers(plan=None, from_date=None, tz=None):
     """
     List of churn subscribers from the previous period for a *plan*.
     """
-    #pylint:disable=invalid-name
+    # pylint:disable=invalid-name
     values = []
     dates = convert_dates_to_utc(month_periods(13, from_date, tz=tz))
     start_period = dates[0]
     kwargs = {}
     if plan:
-        kwargs = {'plan': plan}
+        kwargs = {"plan": plan}
     for end_period in dates[1:]:
-        values.append([end_period, Subscription.objects.churn_in_period(
-            start_period, end_period, **kwargs).count()])
+        values.append(
+            [
+                end_period,
+                Subscription.objects.churn_in_period(
+                    start_period, end_period, **kwargs
+                ).count(),
+            ]
+        )
         start_period = end_period
     return values
 
@@ -70,6 +76,8 @@ def subscribers_age(provider=None):
         queryset = Subscription.objects.filter(plan__organization=provider)
     else:
         queryset = Subscription.objects.all()
-    return queryset.values(slug=F('organization__slug')).annotate(
-        created_at=Min('created_at'), ends_at=Max('ends_at')).order_by(
-        'organization__slug')
+    return (
+        queryset.values(slug=F("organization__slug"))
+        .annotate(created_at=Min("created_at"), ends_at=Max("ends_at"))
+        .order_by("organization__slug")
+    )

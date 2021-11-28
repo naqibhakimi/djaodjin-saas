@@ -15,18 +15,24 @@ framework.
 """
 import os, signal
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
+
 
 def save_coverage():
     sys.stderr.write("saving coverage\n")
     cov.stop()
     cov.save()
 
-if os.getenv('DJANGO_COVERAGE'):
+
+if os.getenv("DJANGO_COVERAGE"):
     import atexit, sys
     import coverage
-    cov = coverage.coverage(data_file=os.path.join(os.getenv('DJANGO_COVERAGE'),
-        ".coverage.%d" % os.getpid()))
+
+    cov = coverage.coverage(
+        data_file=os.path.join(
+            os.getenv("DJANGO_COVERAGE"), ".coverage.%d" % os.getpid()
+        )
+    )
     cov.start()
     atexit.register(save_coverage)
     try:
@@ -43,5 +49,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "testsite.settings")
 # file. This includes Django's development server, if the WSGI_APPLICATION
 # setting points here.
 from django.core.wsgi import get_wsgi_application
-#pylint: disable=invalid-name
+
+# pylint: disable=invalid-name
 application = get_wsgi_application()

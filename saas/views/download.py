@@ -40,34 +40,49 @@ from rest_framework.request import Request
 
 from .. import humanize
 from ..api.coupons import CouponQuerysetMixin, SmartCouponListMixin
-from ..api.transactions import (BillingsQuerysetMixin,
-    SmartTransactionListMixin, TransactionQuerysetMixin, TransferQuerysetMixin)
+from ..api.transactions import (
+    BillingsQuerysetMixin,
+    SmartTransactionListMixin,
+    TransactionQuerysetMixin,
+    TransferQuerysetMixin,
+)
 from ..api.users import RegisteredQuerysetMixin
 from ..compat import six
-from ..metrics.base import (abs_monthly_balances, monthly_balances,
-    month_periods)
-from ..mixins import (CartItemSmartListMixin, ProviderMixin,
-    MetricsMixin, ChurnedQuerysetMixin, SubscriptionSmartListMixin,
-    SubscribedQuerysetMixin, UserSmartListMixin, as_html_description)
+from ..metrics.base import abs_monthly_balances, monthly_balances, month_periods
+from ..mixins import (
+    CartItemSmartListMixin,
+    ProviderMixin,
+    MetricsMixin,
+    ChurnedQuerysetMixin,
+    SubscriptionSmartListMixin,
+    SubscribedQuerysetMixin,
+    UserSmartListMixin,
+    as_html_description,
+)
 from ..models import BalanceLine, CartItem, Coupon
 from ..utils import datetime_or_now
 
 
 class CSVDownloadView(View):
 
-    basename = 'download'
+    basename = "download"
     headings = []
 
     @staticmethod
     def encode(text):
         if six.PY2:
-            return text.encode('utf-8')
+            return text.encode("utf-8")
         return text
 
     def encode_descr(self, transaction):
-        return self.encode(('"%s"' % as_html_description(
-            transaction, active_links=False).replace(
-            '\\', '\\\\').replace('"', '\"')))
+        return self.encode(
+            (
+                '"%s"'
+                % as_html_description(transaction, active_links=False)
+                .replace("\\", "\\\\")
+                .replace('"', '"')
+            )
+        )
 
     @staticmethod
     def decorate_queryset(queryset):
@@ -83,22 +98,21 @@ class CSVDownloadView(View):
             queryset = backend().filter_queryset(request, queryset, self)
         return queryset
 
-    def get(self, *args, **kwargs): #pylint: disable=unused-argument
+    def get(self, *args, **kwargs):  # pylint: disable=unused-argument
         if six.PY2:
             content = BytesIO()
         else:
             content = StringIO()
         csv_writer = csv.writer(content)
-        csv_writer.writerow([self.encode(head)
-            for head in self.get_headings()])
+        csv_writer.writerow([self.encode(head) for head in self.get_headings()])
         qs = self.decorate_queryset(self.filter_queryset(self.get_queryset()))
         for record in qs:
             csv_writer.writerow(self.queryrow_to_columns(record))
         content.seek(0)
-        resp = HttpResponse(content, content_type='text/csv')
-        resp['Content-Disposition'] = \
-            'attachment; filename="{}"'.format(
-                self.get_filename())
+        resp = HttpResponse(content, content_type="text/csv")
+        resp["Content-Disposition"] = 'attachment; filename="{}"'.format(
+            self.get_filename()
+        )
         return resp
 
     def get_headings(self):
@@ -110,7 +124,7 @@ class CSVDownloadView(View):
         raise NotImplementedError
 
     def get_filename(self):
-        return datetime_or_now().strftime(self.basename + '-%Y%m%d.csv')
+        return datetime_or_now().strftime(self.basename + "-%Y%m%d.csv")
 
     def queryrow_to_columns(self, record):
         raise NotImplementedError
@@ -120,15 +134,18 @@ class BalancesDownloadView(MetricsMixin, CSVDownloadView):
     """
     Export balance metrics as a CSV file.
     """
-    queryname = 'balances'
+
+    queryname = "balances"
 
     def get_headings(self):
-        return ['Title'] + [str(end_period) for end_period in month_periods(
-            from_date=self.ends_at, tz=self.timezone)]
+        return ["Title"] + [
+            str(end_period)
+            for end_period in month_periods(from_date=self.ends_at, tz=self.timezone)
+        ]
 
     def get_queryset(self):
-        report = self.kwargs.get('report')
-        return BalanceLine.objects.filter(report=report).order_by('rank')
+        report = self.kwargs.get("report")
+        return BalanceLine.objects.filter(report=report).order_by("rank")
 
     def queryrow_to_columns(self, record):
         balance_line = record
@@ -138,7 +155,8 @@ class BalancesDownloadView(MetricsMixin, CSVDownloadView):
             balances_func = monthly_balances
         if balance_line.selector:
             balances, _ = balances_func(
-                like_account=balance_line.selector, until=self.ends_at)
+                like_account=balance_line.selector, until=self.ends_at
+            )
             row = [balance_line.title] + [item[1] for item in balances]
         else:
             # means we have a heading only
@@ -146,51 +164,49 @@ class BalancesDownloadView(MetricsMixin, CSVDownloadView):
         return row
 
 
-class CouponDownloadView(SmartCouponListMixin, CouponQuerysetMixin,
-                         CSVDownloadView):
+class CouponDownloadView(SmartCouponListMixin, CouponQuerysetMixin, CSVDownloadView):
 
     headings = [
-        'Created At'
-        'Code',
-        'DiscountType',
-        'Amount',
+        "Created At" "Code",
+        "DiscountType",
+        "Amount",
     ]
 
     def get_headings(self):
         return self.headings
 
     def get_filename(self):
-        return datetime_or_now().strftime('coupons-%Y%m%d.csv')
+        return datetime_or_now().strftime("coupons-%Y%m%d.csv")
 
     def queryrow_to_columns(self, record):
         row = [
             record.created_at.date(),
             record.code,
             record.get_discount_type_display(),
-            record.discount_value
+            record.discount_value,
         ]
         return row
 
 
 class CartItemQuerysetMixin(ProviderMixin):
-
     def get_queryset(self):
         return CartItem.objects.filter(coupon__organization=self.provider)
 
 
-class CartItemDownloadView(CartItemSmartListMixin, CartItemQuerysetMixin,
-                           CSVDownloadView):
+class CartItemDownloadView(
+    CartItemSmartListMixin, CartItemQuerysetMixin, CSVDownloadView
+):
 
-    coupon_url_kwarg = 'coupon'
+    coupon_url_kwarg = "coupon"
 
     headings = [
-        'Used At',
-        'Code',
-        'DiscountType',
-        'Amount',
-        'Name',
-        'Email',
-        'Plan',
+        "Used At",
+        "Code",
+        "DiscountType",
+        "Amount",
+        "Name",
+        "Email",
+        "Plan",
     ]
 
     def get_coupons(self):
@@ -198,10 +214,11 @@ class CartItemDownloadView(CartItemSmartListMixin, CartItemQuerysetMixin,
         if coupon_code:
             coupon = get_object_or_404(
                 Coupon.objects.filter(organization=self.provider),
-                code=self.kwargs.get(self.coupon_url_kwarg))
+                code=self.kwargs.get(self.coupon_url_kwarg),
+            )
             return [coupon]
         view = CouponDownloadView()
-        if hasattr(view, 'setup'):
+        if hasattr(view, "setup"):
             # `setup` is only defined in Django 2.2+
             view.setup(self.request, *self.args, **self.kwargs)
         else:
@@ -214,22 +231,24 @@ class CartItemDownloadView(CartItemSmartListMixin, CartItemQuerysetMixin,
         return self.headings
 
     def get_filename(self):
-        return datetime_or_now().strftime('coupons-%Y%m%d.csv')
+        return datetime_or_now().strftime("coupons-%Y%m%d.csv")
 
     def get_queryset(self):
-        '''
+        """
         Return CartItems related to the Coupon specified in the URL.
-        '''
-        return super(CartItemDownloadView, self).get_queryset().filter(
-            coupon__in=self.get_coupons())
+        """
+        return (
+            super(CartItemDownloadView, self)
+            .get_queryset()
+            .filter(coupon__in=self.get_coupons())
+        )
 
     def queryrow_to_columns(self, record):
         cartitem = record
         if cartitem.user:
-            claim_code = 'CLAIMED'
+            claim_code = "CLAIMED"
             email = cartitem.user.email
-            full_name = ' '.join([
-                cartitem.user.first_name, cartitem.user.last_name])
+            full_name = " ".join([cartitem.user.first_name, cartitem.user.last_name])
         else:
             claim_code = cartitem.claim_code
             full_name = cartitem.full_name
@@ -237,22 +256,21 @@ class CartItemDownloadView(CartItemSmartListMixin, CartItemQuerysetMixin,
         return [
             cartitem.created_at.date(),
             self.encode(cartitem.coupon.code),
-            slugify(
-                Coupon.DISCOUNT_CHOICES[cartitem.coupon.discount_type - 1][1]),
+            slugify(Coupon.DISCOUNT_CHOICES[cartitem.coupon.discount_type - 1][1]),
             cartitem.coupon.discount_value,
             self.encode(full_name),
             self.encode(email),
             self.encode(cartitem.plan.slug),
-            self.encode(claim_code)]
+            self.encode(claim_code),
+        ]
 
 
 class RegisteredBaseDownloadView(RegisteredQuerysetMixin, CSVDownloadView):
-
     def get_headings(self):
-        return ['First name', 'Last name', 'Email', 'Registration Date']
+        return ["First name", "Last name", "Email", "Registration Date"]
 
     def get_filename(self):
-        return 'registered-{}.csv'.format(datetime_or_now().strftime('%Y%m%d'))
+        return "registered-{}.csv".format(datetime_or_now().strftime("%Y%m%d"))
 
     def queryrow_to_columns(self, record):
         user = record
@@ -277,11 +295,12 @@ class SubscriptionBaseDownloadView(CSVDownloadView):
         raise NotImplementedError()
 
     def get_headings(self):
-        return ['Name', 'Email', 'Plan', 'Since', 'Until']
+        return ["Name", "Email", "Plan", "Since", "Until"]
 
     def get_filename(self):
-        return 'subscribers-{}-{}.csv'.format(
-            self.subscriber_type, datetime_or_now().strftime('%Y%m%d'))
+        return "subscribers-{}-{}.csv".format(
+            self.subscriber_type, datetime_or_now().strftime("%Y%m%d")
+        )
 
     def queryrow_to_columns(self, record):
         subscription = record
@@ -294,114 +313,127 @@ class SubscriptionBaseDownloadView(CSVDownloadView):
         ]
 
 
-class ActiveSubscriptionBaseDownloadView(SubscribedQuerysetMixin,
-                                         SubscriptionBaseDownloadView):
+class ActiveSubscriptionBaseDownloadView(
+    SubscribedQuerysetMixin, SubscriptionBaseDownloadView
+):
 
-    subscriber_type = 'active'
-
-class ActiveSubscriptionDownloadView(SubscriptionSmartListMixin,
-                                     ActiveSubscriptionBaseDownloadView):
-
-    pass
+    subscriber_type = "active"
 
 
-class ChurnedSubscriptionBaseDownloadView(ChurnedQuerysetMixin,
-                                         SubscriptionBaseDownloadView):
-
-    subscriber_type = 'churned'
-
-
-class ChurnedSubscriptionDownloadView(SubscriptionSmartListMixin,
-                                      ChurnedSubscriptionBaseDownloadView):
+class ActiveSubscriptionDownloadView(
+    SubscriptionSmartListMixin, ActiveSubscriptionBaseDownloadView
+):
 
     pass
 
 
-class TransactionDownloadView(SmartTransactionListMixin,
-                           TransactionQuerysetMixin, CSVDownloadView):
+class ChurnedSubscriptionBaseDownloadView(
+    ChurnedQuerysetMixin, SubscriptionBaseDownloadView
+):
 
-    basename = 'transactions'
+    subscriber_type = "churned"
+
+
+class ChurnedSubscriptionDownloadView(
+    SubscriptionSmartListMixin, ChurnedSubscriptionBaseDownloadView
+):
+
+    pass
+
+
+class TransactionDownloadView(
+    SmartTransactionListMixin, TransactionQuerysetMixin, CSVDownloadView
+):
+
+    basename = "transactions"
 
     headings = [
-        'created_at',
-        'dest_amount',
-        'dest_unit',
-        'dest_organization',
-        'dest_account',
-        'orig_amount',
-        'orig_unit',
-        'orig_organization',
-        'orig_account',
-        'description'
+        "created_at",
+        "dest_amount",
+        "dest_unit",
+        "dest_organization",
+        "dest_account",
+        "orig_amount",
+        "orig_unit",
+        "orig_organization",
+        "orig_account",
+        "description",
     ]
 
     def get_queryset(self):
-        return super(TransactionDownloadView, self).get_queryset().order_by(
-            '-created_at')
+        return (
+            super(TransactionDownloadView, self).get_queryset().order_by("-created_at")
+        )
 
     def queryrow_to_columns(self, record):
         transaction = record
         return [
             transaction.created_at.date(),
-            self.encode(humanize.as_money(
-                transaction.dest_amount, transaction.dest_unit,
-                negative_format="-%s")),
+            self.encode(
+                humanize.as_money(
+                    transaction.dest_amount,
+                    transaction.dest_unit,
+                    negative_format="-%s",
+                )
+            ),
             self.encode(transaction.dest_unit),
             self.encode(transaction.dest_organization.printable_name),
             self.encode(transaction.dest_account),
-            self.encode(humanize.as_money(
-                transaction.orig_amount, transaction.orig_unit,
-                negative_format="-%s")),
+            self.encode(
+                humanize.as_money(
+                    transaction.orig_amount,
+                    transaction.orig_unit,
+                    negative_format="-%s",
+                )
+            ),
             self.encode(transaction.orig_unit),
             self.encode(transaction.orig_organization.printable_name),
             self.encode(transaction.orig_account),
-            self.encode_descr(transaction)
+            self.encode_descr(transaction),
         ]
 
 
-class BillingStatementDownloadView(SmartTransactionListMixin,
-                           BillingsQuerysetMixin, CSVDownloadView):
+class BillingStatementDownloadView(
+    SmartTransactionListMixin, BillingsQuerysetMixin, CSVDownloadView
+):
 
-    basename = 'statement'
-    headings = [
-        'CreatedAt',
-        'Amount',
-        'Unit',
-        'Description'
-    ]
+    basename = "statement"
+    headings = ["CreatedAt", "Amount", "Unit", "Description"]
 
     def queryrow_to_columns(self, record):
         transaction = record
         return [
             transaction.created_at.date(),
-            '{:.2f}'.format(
-                (-1 if transaction.is_debit(self.organization) else 1) *
+            "{:.2f}".format(
+                (-1 if transaction.is_debit(self.organization) else 1)
+                *
                 # XXX integer division
-                Decimal(transaction.dest_amount) / 100),
+                Decimal(transaction.dest_amount)
+                / 100
+            ),
             self.encode(transaction.dest_unit),
-            self.encode_descr(transaction)
+            self.encode_descr(transaction),
         ]
 
 
-class TransferDownloadView(SmartTransactionListMixin,
-                           TransferQuerysetMixin, CSVDownloadView):
+class TransferDownloadView(
+    SmartTransactionListMixin, TransferQuerysetMixin, CSVDownloadView
+):
 
-    basename = 'transfers'
-    headings = [
-        'CreatedAt',
-        'Amount',
-        'Unit',
-        'Description'
-    ]
+    basename = "transfers"
+    headings = ["CreatedAt", "Amount", "Unit", "Description"]
 
     def queryrow_to_columns(self, record):
         transaction = record
         return [
             transaction.created_at.date(),
-            '{:.2f}'.format(
-                (-1 if transaction.is_debit(self.organization) else 1) *
+            "{:.2f}".format(
+                (-1 if transaction.is_debit(self.organization) else 1)
+                *
                 # XXX integer division
-                Decimal(transaction.dest_amount) / 100),
+                Decimal(transaction.dest_amount)
+                / 100
+            ),
             self.encode(transaction.dest_unit),
-            self.encode_descr(transaction)
+            self.encode_descr(transaction),
         ]

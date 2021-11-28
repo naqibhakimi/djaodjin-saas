@@ -35,9 +35,14 @@ from ....settings import ACCT_REGEX
 # Actually a <charge> slug. We are using <organization> here such that
 # it plays nice with the rules-based permission checks.
 urlpatterns = [
-    url(r'^billing/charges/(?P<organization>%s)/email/' % ACCT_REGEX,
+    url(
+        r"^billing/charges/(?P<organization>%s)/email/" % ACCT_REGEX,
         EmailChargeReceiptAPIView.as_view(),
-        name='saas_api_email_charge_receipt'),
-    url(r'^billing/charges/(?P<organization>%s)/?' % ACCT_REGEX,
-        ChargeResourceView.as_view(), name='saas_api_charge'),
+        name="saas_api_email_charge_receipt",
+    ),
+    url(
+        r"^billing/charges/(?P<organization>%s)/?" % ACCT_REGEX,
+        ChargeResourceView.as_view(),
+        name="saas_api_charge",
+    ),
 ]

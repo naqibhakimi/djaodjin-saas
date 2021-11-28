@@ -11,13 +11,16 @@ import django_countries.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saas', '0011_0_7_0'),
+        ("saas", "0011_0_7_0"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='roledescription',
-            name='implicit_create_on_none',
-            field=models.BooleanField(default=False, help_text='Automatically adds the role when a user and profile share the same e-mail domain.'),
+            model_name="roledescription",
+            name="implicit_create_on_none",
+            field=models.BooleanField(
+                default=False,
+                help_text="Automatically adds the role when a user and profile share the same e-mail domain.",
+            ),
         ),
     ]

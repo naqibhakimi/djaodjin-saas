@@ -29,7 +29,7 @@ URLs related to provider pages
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url(r'^', include('saas.urls.provider.billing')),
-    url(r'^', include('saas.urls.provider.metrics')),
-    url(r'^', include('saas.urls.provider.profile')),
+    url(r"^", include("saas.urls.provider.billing")),
+    url(r"^", include("saas.urls.provider.metrics")),
+    url(r"^", include("saas.urls.provider.profile")),
 ]

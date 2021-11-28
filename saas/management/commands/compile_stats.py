@@ -31,21 +31,21 @@ from django.contrib.auth import get_user_model
 
 from ...models import Organization
 
+
 class Command(BaseCommand):
     """Daily usage for the service"""
-    help = 'Print daily usage'
+
+    help = "Print daily usage"
 
     def handle(self, *args, **options):
         end_period = datetime.datetime.now()
         start_period = end_period - datetime.timedelta(days=30)
-        self.stdout.write('from %s to %s\n' % (start_period, end_period))
-        for user in get_user_model().objects.filter(
-            date_joined__gt=start_period):
-            self.stdout.write('%s %s %s\n' % (str(user.date_joined),
-                user.get_username(), user.email))
+        self.stdout.write("from %s to %s\n" % (start_period, end_period))
+        for user in get_user_model().objects.filter(date_joined__gt=start_period):
+            self.stdout.write(
+                "%s %s %s\n" % (str(user.date_joined), user.get_username(), user.email)
+            )
 
-        self.stdout.write('\n')
-        for organization in Organization.objects.filter(
-            created_at__gt=start_period):
-            self.stdout.write('%s %s\n'
-                % (organization.created_at, organization))
+        self.stdout.write("\n")
+        for organization in Organization.objects.filter(created_at__gt=start_period):
+            self.stdout.write("%s %s\n" % (organization.created_at, organization))

@@ -28,8 +28,9 @@ from ..views import StripeProcessorRedirectView
 
 
 urlpatterns = [
-    url(r'^stripe/billing/connected/',
-        StripeProcessorRedirectView.as_view(
-            pattern_name='saas_update_bank'),
-        name='saas_processor_connected_hook'),
+    url(
+        r"^stripe/billing/connected/",
+        StripeProcessorRedirectView.as_view(pattern_name="saas_update_bank"),
+        name="saas_processor_connected_hook",
+    ),
 ]

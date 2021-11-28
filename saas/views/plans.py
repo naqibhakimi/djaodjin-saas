@@ -27,8 +27,7 @@ from django import forms
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.utils.translation import ugettext_lazy as _
-from django.views.generic import (CreateView, ListView, UpdateView,
-    TemplateView)
+from django.views.generic import CreateView, ListView, UpdateView, TemplateView
 from django.views.generic.detail import SingleObjectMixin
 from django.template.context_processors import csrf
 
@@ -51,17 +50,18 @@ class PlanFormMixin(OrganizationMixin, SingleObjectMixin):
         Returns the initial data to use for forms on this view.
         """
         kwargs = super(PlanFormMixin, self).get_initial()
-        kwargs.update({'organization': self.organization})
+        kwargs.update({"organization": self.organization})
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super(PlanFormMixin, self).get_context_data(**kwargs)
-        context.update({'organization': self.organization})
+        context.update({"organization": self.organization})
         if self.object:
             urls = {
-                'plan': {
-                    'api_plan': reverse('saas_api_plan', args=(
-                        self.organization, self.object.slug)),
+                "plan": {
+                    "api_plan": reverse(
+                        "saas_api_plan", args=(self.organization, self.object.slug)
+                    ),
                 }
             }
             update_context_urls(context, urls)
@@ -72,12 +72,12 @@ class PlanFormMixin(OrganizationMixin, SingleObjectMixin):
         Rebuilds the ``kwargs`` to pass to ``reverse()``.
         """
         url_kwargs = super(PlanFormMixin, self).get_url_kwargs(**kwargs)
-        if hasattr(self, 'object') and self.object:
+        if hasattr(self, "object") and self.object:
             plan_kwarg = self.object.slug
         else:
-            plan_kwarg = kwargs.get('plan')
+            plan_kwarg = kwargs.get("plan")
         if plan_kwarg:
-            url_kwargs.update({'plan': plan_kwarg})
+            url_kwargs.update({"plan": plan_kwarg})
         return url_kwargs
 
 
@@ -99,15 +99,17 @@ djaodjin-saas/tree/master/saas/templates/saas/pricing.html>`__).
 
     POST adds the selected plan into the request user cart.
     """
+
     model = Plan
     line_break = 3
-    template_name = 'saas/pricing.html'
-    success_url = reverse_lazy('saas_cart')
-    form_class = forms.Form # Solely to avoid errors on Django 1.9.1
+    template_name = "saas/pricing.html"
+    success_url = reverse_lazy("saas_cart")
+    form_class = forms.Form  # Solely to avoid errors on Django 1.9.1
 
     def get_queryset(self):
-        queryset = Plan.objects.filter(organization=self.provider,
-            is_active=True).order_by('is_not_priced', 'period_amount')
+        queryset = Plan.objects.filter(
+            organization=self.provider, is_active=True
+        ).order_by("is_not_priced", "period_amount")
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -119,42 +121,51 @@ djaodjin-saas/tree/master/saas/templates/saas/pricing.html>`__).
         at_time = datetime_or_now()
         items_selected = []
         if is_authenticated(self.request):
-            items_selected += [item.plan.slug
-                for item in CartItem.objects.get_cart(self.request.user)]
-        if 'cart_items' in self.request.session:
-            items_selected += [item['plan']
-                for item in self.request.session['cart_items']]
-        redeemed = self.request.session.get('redeemed', None)
+            items_selected += [
+                item.plan.slug for item in CartItem.objects.get_cart(self.request.user)
+            ]
+        if "cart_items" in self.request.session:
+            items_selected += [
+                item["plan"] for item in self.request.session["cart_items"]
+            ]
+        redeemed = self.request.session.get("redeemed", None)
         if redeemed is not None:
-            redeemed = Coupon.objects.active(self.provider, redeemed,
-                at_time=at_time).first()
-        for index, plan in enumerate(context['plan_list']):
+            redeemed = Coupon.objects.active(
+                self.provider, redeemed, at_time=at_time
+            ).first()
+        for index, plan in enumerate(context["plan_list"]):
             if index % self.line_break == 0:
-                setattr(plan, 'is_line_break', True)
+                setattr(plan, "is_line_break", True)
             if redeemed and redeemed.is_valid(plan, at_time=at_time):
-                setattr(plan, 'discounted_period_price',
-                    plan.get_discounted_period_price(redeemed))
+                setattr(
+                    plan,
+                    "discounted_period_price",
+                    plan.get_discounted_period_price(redeemed),
+                )
             if is_authenticated(self.request):
-                setattr(plan, 'managed_subscribers',
+                setattr(
+                    plan,
+                    "managed_subscribers",
                     get_role_model().objects.role_on_subscriber(
-                        self.request.user, plan, role_descr=settings.MANAGER))
-        if len(context['plan_list']) % self.line_break == 0:
-            setattr(context['plan_list'], 'is_line_break', True)
-        context.update({
-            'items_selected': items_selected, 'redeemed': redeemed})
-        urls = {'cart': reverse('saas_cart')}
-        if 'urls' in context:
-            context['urls'].update(urls)
+                        self.request.user, plan, role_descr=settings.MANAGER
+                    ),
+                )
+        if len(context["plan_list"]) % self.line_break == 0:
+            setattr(context["plan_list"], "is_line_break", True)
+        context.update({"items_selected": items_selected, "redeemed": redeemed})
+        urls = {"cart": reverse("saas_cart")}
+        if "urls" in context:
+            context["urls"].update(urls)
         else:
-            context.update({'urls': urls})
+            context.update({"urls": urls})
         return context
 
     def post(self, request, *args, **kwargs):
         """
         Add cliked ``Plan`` as an item in the user cart.
         """
-        if 'submit' in request.POST:
-            self.insert_item(request, plan=request.POST['submit'])
+        if "submit" in request.POST:
+            self.insert_item(request, plan=request.POST["submit"])
             return HttpResponseRedirect(self.get_success_url())
         return self.get(request, *args, **kwargs)
 
@@ -173,13 +184,16 @@ djaodjin-saas/tree/master/saas/templates/saas/profile/plans/plan.html>`__).
       - ``organization`` The provider for the plans
       - ``request`` The HTTP request object
     """
-    template_name = 'saas/profile/plans/plan.html'
+
+    template_name = "saas/profile/plans/plan.html"
 
     def get_success_url(self):
         messages.success(
-            self.request, _("Successfully created plan titled '%(title)s'.") % {
-                'title': self.object.title})
-        return reverse('saas_metrics_plans', args=(self.organization,))
+            self.request,
+            _("Successfully created plan titled '%(title)s'.")
+            % {"title": self.object.title},
+        )
+        return reverse("saas_metrics_plans", args=(self.organization,))
 
 
 class PlanUpdateView(PlanFormMixin, UpdateView):
@@ -198,24 +212,30 @@ djaodjin-saas/tree/master/saas/templates/saas/profile/plans/plan.html>`__).
       - ``organization`` The provider of the plan
       - ``request`` The HTTP request object
     """
-    template_name = 'saas/profile/plans/plan.html'
-    slug_url_kwarg = 'plan'
+
+    template_name = "saas/profile/plans/plan.html"
+    slug_url_kwarg = "plan"
 
     def get_success_url(self):
-        messages.success(self.request,
-            _("Successfully updated plan titled '%(title)s'.") % {
-                'title': self.object.title})
-        return reverse('saas_plan_edit',
-            kwargs=self.get_url_kwargs(**self.kwargs))
+        messages.success(
+            self.request,
+            _("Successfully updated plan titled '%(title)s'.")
+            % {"title": self.object.title},
+        )
+        return reverse("saas_plan_edit", kwargs=self.get_url_kwargs(**self.kwargs))
 
     def get_context_data(self, **kwargs):
         context = super(PlanUpdateView, self).get_context_data(**kwargs)
         plan = self.get_object()
-        context['show_delete'] = plan.subscription_set.count() == 0
-        context = update_context_urls(context, {
-            'plan_subscribers': reverse('saas_plan_subscribers',
-                args=(self.organization, self.object))
-        })
+        context["show_delete"] = plan.subscription_set.count() == 0
+        context = update_context_urls(
+            context,
+            {
+                "plan_subscribers": reverse(
+                    "saas_plan_subscribers", args=(self.organization, self.object)
+                )
+            },
+        )
         return context
 
 
@@ -233,12 +253,17 @@ djaodjin-saas/tree/master/saas/templates/saas/profile/plans/index.html>`__).
       - ``organization`` The provider for the plans
       - ``request`` The HTTP request object
     """
-    template_name = 'saas/profile/plans/index.html'
+
+    template_name = "saas/profile/plans/index.html"
 
     def get_context_data(self, **kwargs):
         context = super(PlanListView, self).get_context_data(**kwargs)
-        context.update({
-            'download_url': reverse(
-                'saas_subscriber_pipeline_download_subscribed',
-                kwargs=self.get_url_kwargs(**kwargs))})
+        context.update(
+            {
+                "download_url": reverse(
+                    "saas_subscriber_pipeline_download_subscribed",
+                    kwargs=self.get_url_kwargs(**kwargs),
+                )
+            }
+        )
         return context

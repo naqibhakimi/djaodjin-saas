@@ -28,24 +28,34 @@ URLs API for profile resources (managers, custom roles and subscriptions)
 
 from django.conf.urls import url
 
-from ....api.organizations import (
-    OrganizationDetailAPIView, OrganizationPictureAPIView)
-from ....api.subscriptions import (SubscriptionDetailAPIView,
-    SubscribedSubscriptionListAPIView)
+from ....api.organizations import OrganizationDetailAPIView, OrganizationPictureAPIView
+from ....api.subscriptions import (
+    SubscriptionDetailAPIView,
+    SubscribedSubscriptionListAPIView,
+)
 from ....settings import ACCT_REGEX
 
 
 urlpatterns = [
-    url(r'^profile/(?P<organization>%s)/subscriptions/(?P<subscribed_plan>%s)/?'
+    url(
+        r"^profile/(?P<organization>%s)/subscriptions/(?P<subscribed_plan>%s)/?"
         % (ACCT_REGEX, ACCT_REGEX),
         SubscriptionDetailAPIView.as_view(),
-        name='saas_api_subscription_detail'),
-    url(r'^profile/(?P<organization>%s)/subscriptions/?' % ACCT_REGEX,
+        name="saas_api_subscription_detail",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/subscriptions/?" % ACCT_REGEX,
         SubscribedSubscriptionListAPIView.as_view(),
-        name='saas_api_subscription_list'),
-    url(r'^profile/(?P<organization>%s)/?$' % ACCT_REGEX,
-        OrganizationDetailAPIView.as_view(), name='saas_api_organization'),
-    url(r'^profile/(?P<organization>%s)/picture/$' % ACCT_REGEX,
+        name="saas_api_subscription_list",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/?$" % ACCT_REGEX,
+        OrganizationDetailAPIView.as_view(),
+        name="saas_api_organization",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/picture/$" % ACCT_REGEX,
         OrganizationPictureAPIView.as_view(),
-        name='saas_api_organization_picture'),
+        name="saas_api_organization_picture",
+    ),
 ]

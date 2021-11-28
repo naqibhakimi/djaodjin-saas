@@ -31,12 +31,12 @@ from rest_framework.exceptions import ValidationError
 
 from .serializers import AgreementSignSerializer
 from ..models import Agreement, Signature
-from ..mixins import (ProviderMixin, UserSmartListMixin,
-    DateRangeContextMixin)
+from ..mixins import ProviderMixin, UserSmartListMixin, DateRangeContextMixin
 from ..utils import get_role_model, get_user_serializer
 
 
-#pylint: disable=no-init
+# pylint: disable=no-init
+
 
 class RegisteredQuerysetMixin(DateRangeContextMixin, ProviderMixin):
     """
@@ -56,12 +56,19 @@ class RegisteredQuerysetMixin(DateRangeContextMixin, ProviderMixin):
         #       WHERE created_at < ends_at) AS RoleSubSet
         #     ON User.id = RoleSubSet.user_id
         #     WHERE user_id IS NULL;
-        return self.model.objects.exclude(
-            # OK to use filter because we want to see all users here.
-            # XXX `self.ends_at` is coming from `UserSmartListMixin`
-            pk__in=get_role_model().objects.filter(
-            organization__subscriptions__created_at__lt=self.ends_at).values(
-            'user')).order_by('-date_joined', 'last_name').distinct()
+        return (
+            self.model.objects.exclude(
+                # OK to use filter because we want to see all users here.
+                # XXX `self.ends_at` is coming from `UserSmartListMixin`
+                pk__in=get_role_model()
+                .objects.filter(
+                    organization__subscriptions__created_at__lt=self.ends_at
+                )
+                .values("user")
+            )
+            .order_by("-date_joined", "last_name")
+            .distinct()
+        )
 
 
 class RegisteredBaseAPIView(RegisteredQuerysetMixin, ListAPIView):
@@ -112,6 +119,7 @@ class RegisteredAPIView(UserSmartListMixin, RegisteredBaseAPIView):
             ]
         }
     """
+
     serializer_class = get_user_serializer()
 
 
@@ -148,20 +156,25 @@ class AgreementSignAPIView(GenericAPIView):
           "last_signed": "2019-01-01T00:00:00Z"
         }
     """
-    serializer_class = AgreementSignSerializer
-    slug_url_kwarg = 'agreement'
 
-    def post(self, request, *args, **kwargs): #pylint:disable=unused-argument
+    serializer_class = AgreementSignSerializer
+    slug_url_kwarg = "agreement"
+
+    def post(self, request, *args, **kwargs):  # pylint:disable=unused-argument
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        if serializer.validated_data['read_terms']:
+        if serializer.validated_data["read_terms"]:
             slug = self.kwargs.get(self.slug_url_kwarg)
             try:
-                record = Signature.objects.create_signature(
-                    slug, self.request.user)
+                record = Signature.objects.create_signature(slug, self.request.user)
             except Agreement.DoesNotExist:
                 raise Http404
-            return Response(AgreementSignSerializer().to_representation({
-                'read_terms': serializer.validated_data['read_terms'],
-                'last_signed': record.last_signed}))
-        raise ValidationError(_('You have to agree with the terms'))
+            return Response(
+                AgreementSignSerializer().to_representation(
+                    {
+                        "read_terms": serializer.validated_data["read_terms"],
+                        "last_signed": record.last_signed,
+                    }
+                )
+            )
+        raise ValidationError(_("You have to agree with the terms"))

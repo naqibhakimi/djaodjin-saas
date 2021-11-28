@@ -26,5 +26,9 @@
 Helpers to redirect based on session.
 """
 
-from .redirects import (RedirectFormMixin,
-    OrganizationRedirectView, ProviderRedirectView, UserRedirectView)
+from .redirects import (
+    RedirectFormMixin,
+    OrganizationRedirectView,
+    ProviderRedirectView,
+    UserRedirectView,
+)

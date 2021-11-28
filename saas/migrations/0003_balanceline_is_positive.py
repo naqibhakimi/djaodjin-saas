@@ -8,13 +8,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saas', '0002_auto_20161126_2248'),
+        ("saas", "0002_auto_20161126_2248"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='balanceline',
-            name='is_positive',
+            model_name="balanceline",
+            name="is_positive",
             field=models.BooleanField(default=False),
         ),
     ]

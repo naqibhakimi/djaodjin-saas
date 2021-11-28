@@ -31,26 +31,43 @@ from django.db import transaction, IntegrityError
 from django.utils.encoding import force_text
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import parsers, status
-from rest_framework.generics import (CreateAPIView, ListAPIView,
-    ListCreateAPIView, RetrieveUpdateDestroyAPIView)
+from rest_framework.generics import (
+    CreateAPIView,
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.response import Response
 
-from .serializers import (OrganizationCreateSerializer,
-    OrganizationDetailSerializer, OrganizationWithSubscriptionsSerializer,
-    UploadBlobSerializer)
+from .serializers import (
+    OrganizationCreateSerializer,
+    OrganizationDetailSerializer,
+    OrganizationWithSubscriptionsSerializer,
+    UploadBlobSerializer,
+)
 from .. import settings, signals
 from ..compat import urlparse, urlunparse
 from ..decorators import _valid_manager
 from ..docs import OpenAPIResponse, swagger_auto_schema
-from ..mixins import (DateRangeContextMixin, OrganizationMixin,
-    OrganizationSmartListMixin, ProviderMixin, OrganizationDecorateMixin)
+from ..mixins import (
+    DateRangeContextMixin,
+    OrganizationMixin,
+    OrganizationSmartListMixin,
+    ProviderMixin,
+    OrganizationDecorateMixin,
+)
 from ..models import get_broker
-from ..utils import (datetime_or_now, full_name_natural_split,
-    get_organization_model, get_role_model, handle_uniq_error,
-    get_picture_storage)
+from ..utils import (
+    datetime_or_now,
+    full_name_natural_split,
+    get_organization_model,
+    get_role_model,
+    handle_uniq_error,
+    get_picture_storage,
+)
 
 
-#pylint: disable=no-init
+# pylint: disable=no-init
 class OrganizationCreateMixin(object):
 
     user_model = get_user_model()
@@ -58,25 +75,24 @@ class OrganizationCreateMixin(object):
     def create_organization(self, validated_data):
         organization_model = get_organization_model()
         organization = organization_model(
-            slug=validated_data.get('slug', None),
-            full_name=validated_data.get('full_name'),
-            email=validated_data.get('email'),
-            default_timezone=validated_data.get(
-                'default_timezone', settings.TIME_ZONE),
-            phone=validated_data.get('phone', ""),
-            street_address=validated_data.get('street_address', ""),
-            locality=validated_data.get('locality', ""),
-            region=validated_data.get('region', ""),
-            postal_code=validated_data.get('postal_code', ""),
-            country=validated_data.get('country', ""),
-            extra=validated_data.get('extra'))
-        organization.is_personal = (validated_data.get('type') == 'personal')
+            slug=validated_data.get("slug", None),
+            full_name=validated_data.get("full_name"),
+            email=validated_data.get("email"),
+            default_timezone=validated_data.get("default_timezone", settings.TIME_ZONE),
+            phone=validated_data.get("phone", ""),
+            street_address=validated_data.get("street_address", ""),
+            locality=validated_data.get("locality", ""),
+            region=validated_data.get("region", ""),
+            postal_code=validated_data.get("postal_code", ""),
+            country=validated_data.get("country", ""),
+            extra=validated_data.get("extra"),
+        )
+        organization.is_personal = validated_data.get("type") == "personal"
         with transaction.atomic():
             try:
                 if organization.is_personal:
                     try:
-                        user = self.user_model.objects.get(
-                            username=organization.slug)
+                        user = self.user_model.objects.get(username=organization.slug)
                         if not organization.full_name:
                             organization.full_name = user.get_full_name()
                         if not organization.email:
@@ -87,18 +103,20 @@ class OrganizationCreateMixin(object):
                         # if case they were not provided in the API call.
                         organization.save()
                     except self.user_model.DoesNotExist:
-                        #pylint:disable=unused-variable
+                        # pylint:disable=unused-variable
                         # We are saving the `Organization` when the `User`
                         # does not exist so we have a chance to create
                         # a slug/username.
                         organization.save()
                         first_name, mid, last_name = full_name_natural_split(
-                            organization.full_name)
+                            organization.full_name
+                        )
                         user = self.user_model.objects.create_user(
                             username=organization.slug,
                             email=organization.email,
                             first_name=first_name,
-                            last_name=last_name)
+                            last_name=last_name,
+                        )
                     organization.add_manager(user)
                 else:
                     # When `slug` is not present, `save` would try to create
@@ -115,8 +133,9 @@ class OrganizationQuerysetMixin(OrganizationDecorateMixin):
     queryset = get_organization_model().objects.all()
 
 
-class OrganizationDetailAPIView(OrganizationMixin, OrganizationQuerysetMixin,
-                                RetrieveUpdateDestroyAPIView):
+class OrganizationDetailAPIView(
+    OrganizationMixin, OrganizationQuerysetMixin, RetrieveUpdateDestroyAPIView
+):
     """
     Retrieves a billing profile
 
@@ -163,8 +182,9 @@ class OrganizationDetailAPIView(OrganizationMixin, OrganizationQuerysetMixin,
             ]
         }
     """
-    lookup_field = 'slug'
-    lookup_url_kwarg = 'organization'
+
+    lookup_field = "slug"
+    lookup_url_kwarg = "organization"
     serializer_class = OrganizationWithSubscriptionsSerializer
     user_model = get_user_model()
 
@@ -241,30 +261,40 @@ class OrganizationDetailAPIView(OrganizationMixin, OrganizationQuerysetMixin,
         return obj
 
     def get_queryset(self):
-        return super(OrganizationDetailAPIView,
-            self).get_queryset().prefetch_related('subscriptions')
+        return (
+            super(OrganizationDetailAPIView, self)
+            .get_queryset()
+            .prefetch_related("subscriptions")
+        )
 
     def perform_update(self, serializer):
         is_provider = serializer.instance.is_provider
         if _valid_manager(self.request, [get_broker()]):
-            is_provider = serializer.validated_data.get(
-                'is_provider', is_provider)
+            is_provider = serializer.validated_data.get("is_provider", is_provider)
         changes = serializer.instance.get_changes(serializer.validated_data)
         user = serializer.instance.attached_user()
         if user:
-            setattr(user, user.USERNAME_FIELD, serializer.validated_data.get('slug', user.get_username()))
+            setattr(
+                user,
+                user.USERNAME_FIELD,
+                serializer.validated_data.get("slug", user.get_username()),
+            )
         serializer.instance.slug = serializer.validated_data.get(
-            'slug', serializer.instance.slug)
+            "slug", serializer.instance.slug
+        )
         try:
             serializer.save(is_provider=is_provider)
             serializer.instance.detail = _("Profile was updated.")
-            signals.organization_updated.send(sender=__name__,
-                organization=serializer.instance, changes=changes,
-                user=self.request.user)
+            signals.organization_updated.send(
+                sender=__name__,
+                organization=serializer.instance,
+                changes=changes,
+                user=self.request.user,
+            )
         except IntegrityError as err:
             handle_uniq_error(err)
 
-    def destroy(self, request, *args, **kwargs): #pylint:disable=unused-argument
+    def destroy(self, request, *args, **kwargs):  # pylint:disable=unused-argument
         """
         Archive the organization. We don't to loose the subscriptions
         and transactions history.
@@ -272,14 +302,14 @@ class OrganizationDetailAPIView(OrganizationMixin, OrganizationQuerysetMixin,
         obj = self.get_object()
         user = obj.attached_user()
         email = obj.email
-        slug = '_archive_%d' % obj.id
-        look = re.match(r'.*(@\S+)', django_settings.DEFAULT_FROM_EMAIL)
+        slug = "_archive_%d" % obj.id
+        look = re.match(r".*(@\S+)", django_settings.DEFAULT_FROM_EMAIL)
         if look:
-            email = '%s+%d%s' % (obj.slug, obj.id, look.group(1))
+            email = "%s+%d%s" % (obj.slug, obj.id, look.group(1))
         with transaction.atomic():
             if user:
                 user.is_active = False
-                setattr(user, user.USERNAME_FIELD,slug)
+                setattr(user, user.USERNAME_FIELD, slug)
                 user.email = email
                 user.save()
             # Removes all roles on the organization such that the organization
@@ -296,57 +326,59 @@ class OrganizationDetailAPIView(OrganizationMixin, OrganizationQuerysetMixin,
 
 class OrganizationPictureAPIView(OrganizationMixin, CreateAPIView):
     """
-        Uploads a static asset file
+    Uploads a static asset file
 
-        **Examples
+    **Examples
 
-        .. code-block:: http
+    .. code-block:: http
 
-            POST /api/profile/xia/picture/ HTTP/1.1
+        POST /api/profile/xia/picture/ HTTP/1.1
 
-        responds
+    responds
 
-        .. code-block:: json
+    .. code-block:: json
 
-            {
-              "location": "https://cowork.net/picture.jpg"
-            }
+        {
+          "location": "https://cowork.net/picture.jpg"
+        }
     """
+
     parser_classes = (parsers.FormParser, parsers.MultiPartParser)
     serializer_class = UploadBlobSerializer
 
     def post(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
-        uploaded_file = request.data.get('file')
+        # pylint:disable=unused-argument
+        uploaded_file = request.data.get("file")
         if not uploaded_file:
-            return Response({'detail': _("no location or file specified.")},
-                status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": _("no location or file specified.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # tentatively extract file extension.
-        parts = os.path.splitext(
-            force_text(uploaded_file.name.replace('\\', '/')))
+        parts = os.path.splitext(force_text(uploaded_file.name.replace("\\", "/")))
         ext = parts[-1].lower() if len(parts) > 1 else ""
-        key_name = "%s%s" % (
-            hashlib.sha256(uploaded_file.read()).hexdigest(), ext)
+        key_name = "%s%s" % (hashlib.sha256(uploaded_file.read()).hexdigest(), ext)
         default_storage = get_picture_storage(request)
 
-        location = default_storage.url(
-            default_storage.save(key_name, uploaded_file))
+        location = default_storage.url(default_storage.save(key_name, uploaded_file))
         # We are removing the query parameters, as they contain
         # signature information, not the relevant URL location.
         parts = urlparse(location)
-        location = urlunparse((parts.scheme, parts.netloc, parts.path,
-            "", "", ""))
+        location = urlunparse((parts.scheme, parts.netloc, parts.path, "", "", ""))
         location = self.request.build_absolute_uri(location)
 
         self.organization.picture = location
         self.organization.save()
-        return Response({'location': location}, status=status.HTTP_201_CREATED)
+        return Response({"location": location}, status=status.HTTP_201_CREATED)
 
 
-class OrganizationListAPIView(OrganizationSmartListMixin,
-                              OrganizationQuerysetMixin,
-                              OrganizationCreateMixin, ListCreateAPIView):
+class OrganizationListAPIView(
+    OrganizationSmartListMixin,
+    OrganizationQuerysetMixin,
+    OrganizationCreateMixin,
+    ListCreateAPIView,
+):
     """
     Lists billing profiles
 
@@ -381,16 +413,20 @@ class OrganizationListAPIView(OrganizationSmartListMixin,
             }]
         }
     """
+
     serializer_class = OrganizationDetailSerializer
     user_model = get_user_model()
 
     def get_serializer_class(self):
-        if self.request.method.lower() == 'post':
+        if self.request.method.lower() == "post":
             return OrganizationCreateSerializer
         return super(OrganizationListAPIView, self).get_serializer_class()
 
-    @swagger_auto_schema(responses={
-      201: OpenAPIResponse("Create successful", OrganizationDetailSerializer)})
+    @swagger_auto_schema(
+        responses={
+            201: OpenAPIResponse("Create successful", OrganizationDetailSerializer)
+        }
+    )
     def post(self, request, *args, **kwargs):
         """
         Creates an organization, personal or user profile.
@@ -440,7 +476,7 @@ class OrganizationListAPIView(OrganizationSmartListMixin,
         return page
 
     def create(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         serializer = OrganizationCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -449,18 +485,20 @@ class OrganizationListAPIView(OrganizationSmartListMixin,
         self.decorate_personal(organization)
 
         # returns created profile
-        serializer = self.serializer_class(instance=organization,
-            context=self.get_serializer_context())
+        serializer = self.serializer_class(
+            instance=organization, context=self.get_serializer_context()
+        )
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data,
-            status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class SubscribersQuerysetMixin(OrganizationDecorateMixin, ProviderMixin):
-
     def get_queryset(self):
         queryset = get_organization_model().objects.filter(
-            subscribes_to__organization=self.provider)
+            subscribes_to__organization=self.provider
+        )
         return queryset
 
     def paginate_queryset(self, queryset):
@@ -469,8 +507,9 @@ class SubscribersQuerysetMixin(OrganizationDecorateMixin, ProviderMixin):
         return page
 
 
-class SubscribersAPIView(OrganizationSmartListMixin,
-                         SubscribersQuerysetMixin, ListAPIView):
+class SubscribersAPIView(
+    OrganizationSmartListMixin, SubscribersQuerysetMixin, ListAPIView
+):
     """
     Lists subscribers for a provider
 
@@ -508,29 +547,37 @@ class SubscribersAPIView(OrganizationSmartListMixin,
             ]
         }
     """
+
     serializer_class = OrganizationDetailSerializer
 
 
-class InactiveSubscribersQuerysetMixin(DateRangeContextMixin,
-                                       SubscribersQuerysetMixin):
-
+class InactiveSubscribersQuerysetMixin(DateRangeContextMixin, SubscribersQuerysetMixin):
     def get_queryset(self):
         ends_at = datetime_or_now(self.ends_at)
-        kwargs = {'role__user__last_login__lt': ends_at}
+        kwargs = {"role__user__last_login__lt": ends_at}
         if self.start_at:
-            kwargs.update({'role__user__last_login__gte': self.start_at})
+            kwargs.update({"role__user__last_login__gte": self.start_at})
         else:
-            kwargs.update({
-                'role__user__last_login__gte': ends_at - relativedelta(
-                    days=settings.INACTIVITY_DAYS)})
-        queryset = get_organization_model().objects.filter(
-            subscribes_to__organization=self.provider,
-            subscriptions__ends_at__gt=ends_at).exclude(**kwargs)
+            kwargs.update(
+                {
+                    "role__user__last_login__gte": ends_at
+                    - relativedelta(days=settings.INACTIVITY_DAYS)
+                }
+            )
+        queryset = (
+            get_organization_model()
+            .objects.filter(
+                subscribes_to__organization=self.provider,
+                subscriptions__ends_at__gt=ends_at,
+            )
+            .exclude(**kwargs)
+        )
         return queryset
 
 
-class InactiveSubscribersAPIView(OrganizationSmartListMixin,
-                                 InactiveSubscribersQuerysetMixin, ListAPIView):
+class InactiveSubscribersAPIView(
+    OrganizationSmartListMixin, InactiveSubscribersQuerysetMixin, ListAPIView
+):
     """
     Lists subscribers for a provider
 
@@ -568,4 +615,5 @@ class InactiveSubscribersAPIView(OrganizationSmartListMixin,
             ]
         }
     """
+
     serializer_class = OrganizationDetailSerializer

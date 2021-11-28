@@ -32,8 +32,15 @@ from django.utils.timezone import utc
 
 from saas import humanize
 from saas.backends.razorpay_processor import RazorpayBackend
-from saas.models import (AdvanceDiscount, Charge, ChargeItem,
-    Plan, Subscription, Transaction, get_broker)
+from saas.models import (
+    AdvanceDiscount,
+    Charge,
+    ChargeItem,
+    Plan,
+    Subscription,
+    Transaction,
+    get_broker,
+)
 from saas.metrics.base import month_periods
 from saas.utils import datetime_or_now, get_organization_model
 from saas.settings import PROCESSOR_ID
@@ -54,221 +61,240 @@ class Command(BaseCommand):
     WRITEOFF = 5
 
     FIRST_NAMES = (
-        'Anthony',
-        'Alexander',
-        'Alexis',
-        'Alicia',
-        'Ashley',
-        'Benjamin',
-        'Bruce',
-        'Chloe',
-        'Christopher',
-        'Daniel',
-        'David',
-        'Edward',
-        'Emily',
-        'Emma',
-        'Ethan',
-        'Grace',
-        'Isabella',
-        'Jacob',
-        'James',
-        'Jayden',
-        'Jennifer',
-        'John',
-        'Julia',
-        'Lily',
-        'Lucie',
-        'Luis',
-        'Matthew',
-        'Michael',
-        'Olivia',
-        'Ryan',
-        'Samantha',
-        'Samuel',
-        'Scott',
-        'Sophia',
-        'Williom',
-        )
+        "Anthony",
+        "Alexander",
+        "Alexis",
+        "Alicia",
+        "Ashley",
+        "Benjamin",
+        "Bruce",
+        "Chloe",
+        "Christopher",
+        "Daniel",
+        "David",
+        "Edward",
+        "Emily",
+        "Emma",
+        "Ethan",
+        "Grace",
+        "Isabella",
+        "Jacob",
+        "James",
+        "Jayden",
+        "Jennifer",
+        "John",
+        "Julia",
+        "Lily",
+        "Lucie",
+        "Luis",
+        "Matthew",
+        "Michael",
+        "Olivia",
+        "Ryan",
+        "Samantha",
+        "Samuel",
+        "Scott",
+        "Sophia",
+        "Williom",
+    )
 
     LAST_NAMES = (
-        'Smith',
-        'Johnson',
-        'Williams',
-        'Jones',
-        'Brown',
-        'Davis',
-        'Miller',
-        'Wilson',
-        'Moore',
-        'Taylor',
-        'Anderson',
-        'Thomas',
-        'Jackson',
-        'White',
-        'Harris',
-        'Martin',
-        'Thompson',
-        'Garcia',
-        'Martinez',
-        'Robinson',
-        'Clark',
-        'Rogriguez',
-        'Lewis',
-        'Lee',
-        'Walker',
-        'Hall',
-        'Allen',
-        'Young',
-        'Hernandez',
-        'King',
-        'Wright',
-        'Lopez',
-        'Hill',
-        'Green',
-        'Baker',
-        'Gonzalez',
-        'Nelson',
-        'Mitchell',
-        'Perez',
-        'Roberts',
-        'Turner',
-        'Philips',
-        'Campbell',
-        'Parker',
-        'Collins',
-        'Stewart',
-        'Sanchez',
-        'Morris',
-        'Rogers',
-        'Reed',
-        'Cook',
-        'Bell',
-        'Cooper',
-        'Richardson',
-        'Cox',
-        'Ward',
-        'Peterson',
-        )
+        "Smith",
+        "Johnson",
+        "Williams",
+        "Jones",
+        "Brown",
+        "Davis",
+        "Miller",
+        "Wilson",
+        "Moore",
+        "Taylor",
+        "Anderson",
+        "Thomas",
+        "Jackson",
+        "White",
+        "Harris",
+        "Martin",
+        "Thompson",
+        "Garcia",
+        "Martinez",
+        "Robinson",
+        "Clark",
+        "Rogriguez",
+        "Lewis",
+        "Lee",
+        "Walker",
+        "Hall",
+        "Allen",
+        "Young",
+        "Hernandez",
+        "King",
+        "Wright",
+        "Lopez",
+        "Hill",
+        "Green",
+        "Baker",
+        "Gonzalez",
+        "Nelson",
+        "Mitchell",
+        "Perez",
+        "Roberts",
+        "Turner",
+        "Philips",
+        "Campbell",
+        "Parker",
+        "Collins",
+        "Stewart",
+        "Sanchez",
+        "Morris",
+        "Rogers",
+        "Reed",
+        "Cook",
+        "Bell",
+        "Cooper",
+        "Richardson",
+        "Cox",
+        "Ward",
+        "Peterson",
+    )
 
     organization_model = get_organization_model()
 
     def add_arguments(self, parser):
-        parser.add_argument('--provider',
-            action='store', dest='provider',
-            default=settings.SAAS['BROKER']['GET_INSTANCE'],
-            help='create sample subscribers on this provider')
+        parser.add_argument(
+            "--provider",
+            action="store",
+            dest="provider",
+            default=settings.SAAS["BROKER"]["GET_INSTANCE"],
+            help="create sample subscribers on this provider",
+        )
 
     def handle(self, *args, **options):
-        #pylint: disable=too-many-locals,too-many-statements
+        # pylint: disable=too-many-locals,too-many-statements
         RazorpayBackend.bypass_api = True
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         from_date = now
-        from_date = datetime.datetime(
-            year=from_date.year, month=from_date.month, day=1)
+        from_date = datetime.datetime(year=from_date.year, month=from_date.month, day=1)
         if args:
-            from_date = datetime.datetime.strptime(
-                args[0], '%Y-%m-%d')
+            from_date = datetime.datetime.strptime(args[0], "%Y-%m-%d")
         # Create a set of 3 plans
         broker = get_broker()
         plan, _ = Plan.objects.get_or_create(
-            slug='basic',
+            slug="basic",
             defaults={
-                'title': "Basic",
-                'description': "Basic Plan",
-                'period_amount': 24900,
-                'broker_fee_percent': 0,
-                'period_type': 4,
-                'organization': broker,
-                'is_active': True
-        })
+                "title": "Basic",
+                "description": "Basic Plan",
+                "period_amount": 24900,
+                "broker_fee_percent": 0,
+                "period_type": 4,
+                "organization": broker,
+                "is_active": True,
+            },
+        )
         advance_discount = AdvanceDiscount.objects.get_or_create(
             plan=plan,
             discount_type=AdvanceDiscount.PERCENTAGE,
             discount_value=1000,
-            length=12)
+            length=12,
+        )
         Plan.objects.get_or_create(
-            slug='medium',
+            slug="medium",
             defaults={
-                'title': "Medium",
-                'description': "Medium Plan",
-                'period_amount': 24900,
-                'broker_fee_percent': 0,
-                'period_type': 4,
-                'organization': broker,
-                'is_active': True
-        })
+                "title": "Medium",
+                "description": "Medium Plan",
+                "period_amount": 24900,
+                "broker_fee_percent": 0,
+                "period_type": 4,
+                "organization": broker,
+                "is_active": True,
+            },
+        )
         plan, _ = Plan.objects.get_or_create(
-            slug='premium',
+            slug="premium",
             defaults={
-                'title': "Premium",
-                'description': "Premium Plan",
-                'period_amount': 18900,
-                'broker_fee_percent': 0,
-                'period_type': 4,
-                'organization': broker,
-                'is_active': True
-        })
+                "title": "Premium",
+                "description": "Premium Plan",
+                "period_amount": 18900,
+                "broker_fee_percent": 0,
+                "period_type": 4,
+                "organization": broker,
+                "is_active": True,
+            },
+        )
         advance_discount = AdvanceDiscount.objects.get_or_create(
             plan=plan,
             discount_type=AdvanceDiscount.PERCENTAGE,
             discount_value=81,
-            length=12)
+            length=12,
+        )
         # Create Income transactions that represents a growing bussiness.
-        provider = self.organization_model.objects.get(slug=options['provider'])
+        provider = self.organization_model.objects.get(slug=options["provider"])
         processor = self.organization_model.objects.get(pk=PROCESSOR_ID)
         for end_period in month_periods(from_date=from_date):
             nb_new_customers = random.randint(0, 9)
             for _ in range(nb_new_customers):
                 queryset = Plan.objects.filter(
-                    organization=provider, period_amount__gt=0)
+                    organization=provider, period_amount__gt=0
+                )
                 plan = queryset[random.randint(0, queryset.count() - 1)]
                 created = False
                 trials = 0
                 while not created:
                     try:
-                        first_name = self.FIRST_NAMES[random.randint(
-                            0, len(self.FIRST_NAMES)-1)]
-                        last_name = self.LAST_NAMES[random.randint(
-                            0, len(self.LAST_NAMES)-1)]
-                        full_name = '%s %s' % (first_name, last_name)
-                        slug = slugify('demo%d' % random.randint(1, 1000))
-                        customer, created = \
-                            self.organization_model.objects.get_or_create(
-                                slug=slug, full_name=full_name)
-                    #pylint: disable=catching-non-exception
+                        first_name = self.FIRST_NAMES[
+                            random.randint(0, len(self.FIRST_NAMES) - 1)
+                        ]
+                        last_name = self.LAST_NAMES[
+                            random.randint(0, len(self.LAST_NAMES) - 1)
+                        ]
+                        full_name = "%s %s" % (first_name, last_name)
+                        slug = slugify("demo%d" % random.randint(1, 1000))
+                        (
+                            customer,
+                            created,
+                        ) = self.organization_model.objects.get_or_create(
+                            slug=slug, full_name=full_name
+                        )
+                    # pylint: disable=catching-non-exception
                     except IntegrityError:
                         trials = trials + 1
                         if trials > 10:
                             raise RuntimeError(
-                         'impossible to create a new customer after 10 trials.')
+                                "impossible to create a new customer after 10 trials."
+                            )
                 self.organization_model.objects.filter(pk=customer.id).update(
-                    created_at=end_period)
+                    created_at=end_period
+                )
                 subscription = Subscription.objects.create(
-                    organization=customer, plan=plan,
-                    ends_at=now + datetime.timedelta(days=31))
-                Subscription.objects.filter(
-                    pk=subscription.id).update(created_at=end_period)
+                    organization=customer,
+                    plan=plan,
+                    ends_at=now + datetime.timedelta(days=31),
+                )
+                Subscription.objects.filter(pk=subscription.id).update(
+                    created_at=end_period
+                )
             # Insert some churn in %
             churn_rate = 2
-            all_subscriptions = Subscription.objects.filter(
-                plan__organization=provider)
-            nb_churn_customers = (all_subscriptions.count()
-                * churn_rate // 100)
-            subscriptions = random.sample(list(all_subscriptions),
-                all_subscriptions.count() - nb_churn_customers)
+            all_subscriptions = Subscription.objects.filter(plan__organization=provider)
+            nb_churn_customers = all_subscriptions.count() * churn_rate // 100
+            subscriptions = random.sample(
+                list(all_subscriptions), all_subscriptions.count() - nb_churn_customers
+            )
             for subscription in subscriptions:
                 nb_periods = random.randint(1, 6)
                 amount = nb_periods * subscription.plan.period_amount
                 ends_at = subscription.plan.end_of_period(
-                    subscription.ends_at, nb_periods)
+                    subscription.ends_at, nb_periods
+                )
                 transaction_item = Transaction.objects.new_subscription_order(
                     subscription,
                     amount=amount,
                     descr=humanize.describe_buy_periods(
-                        subscription.plan, ends_at, nb_periods),
-                    created_at=end_period)
+                        subscription.plan, ends_at, nb_periods
+                    ),
+                    created_at=end_period,
+                )
                 if transaction_item.dest_amount < 50:
                     continue
                 transaction_item.orig_amount = transaction_item.dest_amount
@@ -278,23 +304,27 @@ class Command(BaseCommand):
                     created_at=transaction_item.created_at,
                     amount=transaction_item.dest_amount,
                     customer=subscription.organization,
-                    description='Charge for %d periods' % nb_periods,
+                    description="Charge for %d periods" % nb_periods,
                     processor=processor,
                     processor_key=str(transaction_item.pk),
-# XXX We can't do that yet because of
-# ``PROCESSOR_BACKEND.charge_distribution(self)``
-#                    unit=transaction_item.dest_unit,
-                    state=Charge.CREATED)
+                    # XXX We can't do that yet because of
+                    # ``PROCESSOR_BACKEND.charge_distribution(self)``
+                    #                    unit=transaction_item.dest_unit,
+                    state=Charge.CREATED,
+                )
                 charge.created_at = transaction_item.created_at
                 charge.save()
-                ChargeItem.objects.create(
-                    invoiced=transaction_item, charge=charge)
+                ChargeItem.objects.create(invoiced=transaction_item, charge=charge)
                 charge.payment_successful(
-                    receipt_info={'last4': 1241, 'exp_date': datetime_or_now()})
+                    receipt_info={"last4": 1241, "exp_date": datetime_or_now()}
+                )
             churned = all_subscriptions.exclude(
-                pk__in=[subscription.pk for subscription in subscriptions])
+                pk__in=[subscription.pk for subscription in subscriptions]
+            )
             for subscription in churned:
                 subscription.ends_at = end_period
                 subscription.save()
-            self.stdout.write("%d new and %d churned customers at %s" % (
-                nb_new_customers, nb_churn_customers, end_period))
+            self.stdout.write(
+                "%d new and %d churned customers at %s"
+                % (nb_new_customers, nb_churn_customers, end_period)
+            )

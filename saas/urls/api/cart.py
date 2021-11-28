@@ -28,17 +28,17 @@ URLs for the cart API of djaodjin saas.
 
 from django.conf.urls import url
 
-from ...api.billing import (CartItemAPIView, CartItemUploadAPIView,
-                            CouponRedeemAPIView)
+from ...api.billing import CartItemAPIView, CartItemUploadAPIView, CouponRedeemAPIView
 from ...api.plans import PricingAPIView
 from ...settings import ACCT_REGEX
 
 urlpatterns = [
-    url(r'^pricing/',
-        PricingAPIView.as_view(), name='saas_api_pricing'),
-    url(r'^cart/redeem/',
-        CouponRedeemAPIView.as_view(), name='saas_api_redeem_coupon'),
-    url(r'^cart/(?P<plan>%s)/upload/' % ACCT_REGEX,
-        CartItemUploadAPIView.as_view(), name='saas_api_cart_upload'),
-    url(r'^cart/', CartItemAPIView.as_view(), name='saas_api_cart')
+    url(r"^pricing/", PricingAPIView.as_view(), name="saas_api_pricing"),
+    url(r"^cart/redeem/", CouponRedeemAPIView.as_view(), name="saas_api_redeem_coupon"),
+    url(
+        r"^cart/(?P<plan>%s)/upload/" % ACCT_REGEX,
+        CartItemUploadAPIView.as_view(),
+        name="saas_api_cart_upload",
+    ),
+    url(r"^cart/", CartItemAPIView.as_view(), name="saas_api_cart"),
 ]

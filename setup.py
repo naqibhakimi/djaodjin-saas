@@ -27,53 +27,58 @@ from distutils.core import setup
 import saas
 
 requirements = []
-with open('./requirements.txt') as requirements_txt:
+with open("./requirements.txt") as requirements_txt:
     for line in requirements_txt:
-        prerequisite = line.split('#')[0].strip()
+        prerequisite = line.split("#")[0].strip()
         if prerequisite:
             requirements += [prerequisite]
 
 setup(
-    name='djaodjin-saas',
+    name="djaodjin-saas",
     version=saas.__version__,
-    author='The DjaoDjin Team',
-    author_email='support@djaodjin.com',
+    author="The DjaoDjin Team",
+    author_email="support@djaodjin.com",
     install_requires=requirements,
-    packages=['saas',
-              'saas.backends',
-              'saas.backends.urls',
-              'saas.backends.stripe_processor',
-              'saas.backends.stripe_processor.urls',
-              'saas.management', # otherwise __init__.py is not installed
-              'saas.management.commands',
-              'saas.migrations',
-              'saas.templatetags',
-              'saas.urls',
-              'saas.urls.api',
-              'saas.urls.api.provider',
-              'saas.urls.api.subscriber',
-              'saas.urls.provider',
-              'saas.urls.subscriber',
-              'saas.urls.subscriber.billing',
-              'saas.metrics',
-              'saas.views',
-              'saas.api',
-              ],
-    package_data={'saas': ['fixtures/*',
-                           'static/js/*.js',
-                           'templates/saas/*.html',
-                           'templates/saas/agreements/*.md',
-                           'templates/saas/billing/*.html',
-                           'templates/saas/legal/*.html',
-                           'templates/saas/metrics/*.html',
-                           'templates/saas/profile/*.html',
-                           'templates/saas/profile/roles/*.html',
-                           'templates/saas/users/*.html']},
-    url='https://github.com/djaodjin/djaodjin-saas/',
-    download_url='https://github.com/djaodjin/djaodjin-saas/tarball/%s' \
-        % saas.__version__,
-    license='BSD',
-    description='Django application for subscription businesses',
-    long_description_content_type='text/markdown',
-    long_description=open('README.md').read(),
+    packages=[
+        "saas",
+        "saas.backends",
+        "saas.backends.urls",
+        "saas.backends.stripe_processor",
+        "saas.backends.stripe_processor.urls",
+        "saas.management",  # otherwise __init__.py is not installed
+        "saas.management.commands",
+        "saas.migrations",
+        "saas.templatetags",
+        "saas.urls",
+        "saas.urls.api",
+        "saas.urls.api.provider",
+        "saas.urls.api.subscriber",
+        "saas.urls.provider",
+        "saas.urls.subscriber",
+        "saas.urls.subscriber.billing",
+        "saas.metrics",
+        "saas.views",
+        "saas.api",
+    ],
+    package_data={
+        "saas": [
+            "fixtures/*",
+            "static/js/*.js",
+            "templates/saas/*.html",
+            "templates/saas/agreements/*.md",
+            "templates/saas/billing/*.html",
+            "templates/saas/legal/*.html",
+            "templates/saas/metrics/*.html",
+            "templates/saas/profile/*.html",
+            "templates/saas/profile/roles/*.html",
+            "templates/saas/users/*.html",
+        ]
+    },
+    url="https://github.com/djaodjin/djaodjin-saas/",
+    download_url="https://github.com/djaodjin/djaodjin-saas/tarball/%s"
+    % saas.__version__,
+    license="BSD",
+    description="Django application for subscription businesses",
+    long_description_content_type="text/markdown",
+    long_description=open("README.md").read(),
 )

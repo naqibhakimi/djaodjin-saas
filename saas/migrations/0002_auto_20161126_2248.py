@@ -8,13 +8,13 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saas', '0001_initial'),
+        ("saas", "0001_initial"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='roledescription',
-            old_name='name',
-            new_name='title',
+            model_name="roledescription",
+            old_name="name",
+            new_name="title",
         ),
     ]

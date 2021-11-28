@@ -9,8 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saas', '0009_0_3_5'),
+        ("saas", "0009_0_3_5"),
     ]
 
-    operations = [
-    ]
+    operations = []

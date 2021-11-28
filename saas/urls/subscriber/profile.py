@@ -22,27 +22,44 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-'''Urls'''
+"""Urls"""
 
 from django.conf.urls import url
 
 from ...settings import ACCT_REGEX, VERIFICATION_KEY_RE
-from ...views.profile import (RoleDetailView, RoleListView,
-    OrganizationProfileView, SubscriptionListView)
+from ...views.profile import (
+    RoleDetailView,
+    RoleListView,
+    OrganizationProfileView,
+    SubscriptionListView,
+)
 from ...views.optins import SubscriptionGrantAcceptView
 
 urlpatterns = [
-    url(r'^profile/(?P<organization>%s)/roles/(?P<role>%s)/'
-        % (ACCT_REGEX, ACCT_REGEX),
-        RoleDetailView.as_view(), name='saas_role_detail'),
-    url(r'^profile/(?P<organization>%s)/roles/$' % ACCT_REGEX,
-        RoleListView.as_view(), name='saas_role_list'),
-    url(r'^profile/(?P<organization>%s)/subscriptions/accept/'\
-        '(?P<verification_key>%s)/' % (ACCT_REGEX, VERIFICATION_KEY_RE),
+    url(
+        r"^profile/(?P<organization>%s)/roles/(?P<role>%s)/" % (ACCT_REGEX, ACCT_REGEX),
+        RoleDetailView.as_view(),
+        name="saas_role_detail",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/roles/$" % ACCT_REGEX,
+        RoleListView.as_view(),
+        name="saas_role_list",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/subscriptions/accept/"
+        "(?P<verification_key>%s)/" % (ACCT_REGEX, VERIFICATION_KEY_RE),
         SubscriptionGrantAcceptView.as_view(),
-        name='subscription_grant_accept'),
-    url(r'^profile/(?P<organization>%s)/subscriptions/' % ACCT_REGEX,
-        SubscriptionListView.as_view(), name='saas_subscription_list'),
-    url(r'^profile/(?P<organization>%s)/contact/' % ACCT_REGEX,
-        OrganizationProfileView.as_view(), name='saas_organization_profile'),
+        name="subscription_grant_accept",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/subscriptions/" % ACCT_REGEX,
+        SubscriptionListView.as_view(),
+        name="saas_subscription_list",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/contact/" % ACCT_REGEX,
+        OrganizationProfileView.as_view(),
+        name="saas_organization_profile",
+    ),
 ]

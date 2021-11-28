@@ -30,25 +30,49 @@ through POST requests.
 from django.conf.urls import url
 
 from ....settings import ACCT_REGEX
-from ....views.billing import (CartPeriodsView, CartSeatsView,
-    CardUpdateView, CartView, BalanceView, CheckoutView)
+from ....views.billing import (
+    CartPeriodsView,
+    CartSeatsView,
+    CardUpdateView,
+    CartView,
+    BalanceView,
+    CheckoutView,
+)
 
 
 urlpatterns = [
-    url(r'^billing/(?P<organization>%s)/checkout/' % ACCT_REGEX,
-        CheckoutView.as_view(), name='saas_checkout'),
-    url(r'^billing/(?P<organization>%s)/cart-seats/' % ACCT_REGEX,
-        CartSeatsView.as_view(), name='saas_cart_seats'),
-    url(r'^billing/(?P<organization>%s)/cart-periods/' % ACCT_REGEX,
-        CartPeriodsView.as_view(), name='saas_cart_periods'),
-    url(r'^billing/(?P<organization>%s)/cart/' % ACCT_REGEX,
-        CartView.as_view(), name='saas_organization_cart'),
-    url(r'^billing/(?P<organization>%s)/card/' % ACCT_REGEX,
-        CardUpdateView.as_view(), name='saas_update_card'),
+    url(
+        r"^billing/(?P<organization>%s)/checkout/" % ACCT_REGEX,
+        CheckoutView.as_view(),
+        name="saas_checkout",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/cart-seats/" % ACCT_REGEX,
+        CartSeatsView.as_view(),
+        name="saas_cart_seats",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/cart-periods/" % ACCT_REGEX,
+        CartPeriodsView.as_view(),
+        name="saas_cart_periods",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/cart/" % ACCT_REGEX,
+        CartView.as_view(),
+        name="saas_organization_cart",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/card/" % ACCT_REGEX,
+        CardUpdateView.as_view(),
+        name="saas_update_card",
+    ),
     # Implementation Note: <subscribed_plan> (not <plan>) such that
     # the required_manager decorator does not raise a PermissionDenied
     # for a plan <organization> is subscribed to.
-    url(r'^billing/(?P<organization>%s)/balance/((?P<subscribed_plan>%s)/)?'
+    url(
+        r"^billing/(?P<organization>%s)/balance/((?P<subscribed_plan>%s)/)?"
         % (ACCT_REGEX, ACCT_REGEX),
-        BalanceView.as_view(), name='saas_organization_balance'),
+        BalanceView.as_view(),
+        name="saas_organization_balance",
+    ),
 ]

@@ -10,68 +10,115 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saas', '0006_0_3_0'),
+        ("saas", "0006_0_3_0"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='charge',
-            name='created_at',
+            model_name="charge",
+            name="created_at",
             field=models.DateTimeField(),
         ),
         migrations.AlterField(
-            model_name='charge',
-            name='created_by',
-            field=models.ForeignKey(db_column='user_id', null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL),
+            model_name="charge",
+            name="created_by",
+            field=models.ForeignKey(
+                db_column="user_id",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='charge',
-            name='customer',
-            field=models.ForeignKey(help_text='organization charged', on_delete=django.db.models.deletion.PROTECT, to='saas.Organization'),
+            model_name="charge",
+            name="customer",
+            field=models.ForeignKey(
+                help_text="organization charged",
+                on_delete=django.db.models.deletion.PROTECT,
+                to="saas.Organization",
+            ),
         ),
         migrations.AlterField(
-            model_name='charge',
-            name='processor',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='charges', to='saas.Organization'),
+            model_name="charge",
+            name="processor",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="charges",
+                to="saas.Organization",
+            ),
         ),
         migrations.AlterField(
-            model_name='charge',
-            name='state',
-            field=models.PositiveSmallIntegerField(choices=[(0, 'created'), (1, 'done'), (2, 'failed'), (3, 'disputed')], default=0),
+            model_name="charge",
+            name="state",
+            field=models.PositiveSmallIntegerField(
+                choices=[(0, "created"), (1, "done"), (2, "failed"), (3, "disputed")],
+                default=0,
+            ),
         ),
         migrations.AlterField(
-            model_name='chargeitem',
-            name='charge',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='charge_items', to='saas.Charge'),
+            model_name="chargeitem",
+            name="charge",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="charge_items",
+                to="saas.Charge",
+            ),
         ),
         migrations.AlterField(
-            model_name='chargeitem',
-            name='invoiced',
-            field=models.ForeignKey(help_text='transaction invoiced through this charge', on_delete=django.db.models.deletion.PROTECT, related_name='invoiced_item', to='saas.Transaction'),
+            model_name="chargeitem",
+            name="invoiced",
+            field=models.ForeignKey(
+                help_text="transaction invoiced through this charge",
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="invoiced_item",
+                to="saas.Transaction",
+            ),
         ),
         migrations.AlterField(
-            model_name='chargeitem',
-            name='invoiced_distribute',
-            field=models.ForeignKey(help_text='transaction recording the distribution from processor to provider.', null=True, on_delete=django.db.models.deletion.PROTECT, related_name='invoiced_distribute', to='saas.Transaction'),
+            model_name="chargeitem",
+            name="invoiced_distribute",
+            field=models.ForeignKey(
+                help_text="transaction recording the distribution from processor to provider.",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="invoiced_distribute",
+                to="saas.Transaction",
+            ),
         ),
         migrations.AlterField(
-            model_name='chargeitem',
-            name='invoiced_fee',
-            field=models.ForeignKey(help_text='fee transaction to process the transaction invoiced through this charge', null=True, on_delete=django.db.models.deletion.PROTECT, related_name='invoiced_fee_item', to='saas.Transaction'),
+            model_name="chargeitem",
+            name="invoiced_fee",
+            field=models.ForeignKey(
+                help_text="fee transaction to process the transaction invoiced through this charge",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="invoiced_fee_item",
+                to="saas.Transaction",
+            ),
         ),
         migrations.AlterField(
-            model_name='signature',
-            name='agreement',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='saas.Agreement'),
+            model_name="signature",
+            name="agreement",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT, to="saas.Agreement"
+            ),
         ),
         migrations.AlterField(
-            model_name='transaction',
-            name='dest_organization',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='incoming', to='saas.Organization'),
+            model_name="transaction",
+            name="dest_organization",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="incoming",
+                to="saas.Organization",
+            ),
         ),
         migrations.AlterField(
-            model_name='transaction',
-            name='orig_organization',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='outgoing', to='saas.Organization'),
+            model_name="transaction",
+            name="orig_organization",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="outgoing",
+                to="saas.Organization",
+            ),
         ),
     ]

@@ -22,7 +22,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#pylint:disable=unused-argument,unused-import
+# pylint:disable=unused-argument,unused-import
 
 try:
     from drf_yasg.openapi import Response as OpenAPIResponse, Parameter, IN_PATH
@@ -33,17 +33,19 @@ except ImportError:
 
     IN_PATH = 0
 
-    class no_body(object):#pylint:disable=invalid-name
+    class no_body(object):  # pylint:disable=invalid-name
         pass
 
     def swagger_auto_schema(function=None, **kwargs):
         """
         Dummy decorator when drf_yasg is not present.
         """
+
         def decorator(view_func):
             @wraps(view_func, assigned=available_attrs(view_func))
             def _wrapped_view(request, *args, **kwargs):
                 return view_func(request, *args, **kwargs)
+
             return _wrapped_view
 
         if function:
@@ -54,6 +56,7 @@ except ImportError:
         """
         Dummy response object to document API.
         """
+
         def __init__(self, *args, **kwargs):
             pass
 
@@ -61,5 +64,6 @@ except ImportError:
         """
         Dummy object to document API.
         """
+
         def __init__(self, *args, **kwargs):
             pass

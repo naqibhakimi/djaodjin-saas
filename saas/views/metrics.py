@@ -51,27 +51,34 @@ djaodjin-saas/tree/master/saas/templates/saas/metrics/balances.html>`__).
       - ``request`` The HTTP request object
     """
 
-    template_name = 'saas/metrics/balances.html'
+    template_name = "saas/metrics/balances.html"
 
     def get_context_data(self, **kwargs):
         context = super(BalancesView, self).get_context_data(**kwargs)
-        report = self.kwargs.get('report')
-        year = self.kwargs.get('year')
+        report = self.kwargs.get("report")
+        year = self.kwargs.get("year")
         if year:
             year = int(year)
             ends_at = datetime_or_now(datetime(year=year + 1, month=1, day=1))
-            context.update({'ends_at': ends_at})
-        update_context_urls(context, {
-            'api_balance_lines': reverse(
-                'saas_api_balance_lines', kwargs={'report': report}),
-            'api_broker_balances': reverse(
-                'saas_api_broker_balances', kwargs={'report': report}),
-            'download_balances': reverse(
-                'saas_balances_download', kwargs={'report': report}),
-            'download_transactions': reverse(
-                'saas_transactions_download',
-                kwargs=self.get_url_kwargs(**kwargs)),
-            'broker_transactions': reverse('saas_broker_transactions')})
+            context.update({"ends_at": ends_at})
+        update_context_urls(
+            context,
+            {
+                "api_balance_lines": reverse(
+                    "saas_api_balance_lines", kwargs={"report": report}
+                ),
+                "api_broker_balances": reverse(
+                    "saas_api_broker_balances", kwargs={"report": report}
+                ),
+                "download_balances": reverse(
+                    "saas_balances_download", kwargs={"report": report}
+                ),
+                "download_transactions": reverse(
+                    "saas_transactions_download", kwargs=self.get_url_kwargs(**kwargs)
+                ),
+                "broker_transactions": reverse("saas_broker_transactions"),
+            },
+        )
         return context
 
 
@@ -89,17 +96,21 @@ class LifeTimeValueMetricsView(ProviderMixin, TemplateView):
       - ``organization`` The provider object
       - ``request`` The HTTP request object
     """
-    template_name = 'saas/metrics/lifetimevalue.html'
+
+    template_name = "saas/metrics/lifetimevalue.html"
 
     def get_context_data(self, **kwargs):
-        context = super(LifeTimeValueMetricsView, self).get_context_data(
-            **kwargs)
+        context = super(LifeTimeValueMetricsView, self).get_context_data(**kwargs)
         urls = {
-            'metrics_lifetimevalue_download': reverse(
-                'saas_metrics_lifetimevalue_download', args=(self.provider,)),
-            'provider': {
-                'api_metrics_lifetimevalue': reverse(
-                    'saas_api_metrics_lifetimevalue', args=(self.provider,))}}
+            "metrics_lifetimevalue_download": reverse(
+                "saas_metrics_lifetimevalue_download", args=(self.provider,)
+            ),
+            "provider": {
+                "api_metrics_lifetimevalue": reverse(
+                    "saas_api_metrics_lifetimevalue", args=(self.provider,)
+                )
+            },
+        }
         update_context_urls(context, urls)
         return context
 
@@ -108,8 +119,15 @@ class LifeTimeValueDownloadView(LifetimeValueMetricMixin, CSVDownloadView):
     """
     Export customers lifetime value as a CSV file.
     """
-    headings = ['Profile', 'Since', 'Ends at',
-        'Contract value', 'Cash payments', 'Deferred revenue']
+
+    headings = [
+        "Profile",
+        "Since",
+        "Ends at",
+        "Contract value",
+        "Cash payments",
+        "Deferred revenue",
+    ]
 
     def queryrow_to_columns(self, record):
         organization = record
@@ -140,17 +158,20 @@ class CouponMetricsView(CouponMixin, TemplateView):
     """
 
     model = CartItem
-    template_name = 'saas/metrics/coupons.html'
+    template_name = "saas/metrics/coupons.html"
 
     def get_context_data(self, **kwargs):
         context = super(CouponMetricsView, self).get_context_data(**kwargs)
         urls = {
-            'coupon_uses_download': reverse('saas_coupon_uses_download',
-                args=(self.provider, self.coupon.code)),
-            'provider': {
-                'api_metrics_coupon_uses': reverse(
-                    'saas_api_coupon_uses',
-                    args=(self.provider, self.coupon.code))}}
+            "coupon_uses_download": reverse(
+                "saas_coupon_uses_download", args=(self.provider, self.coupon.code)
+            ),
+            "provider": {
+                "api_metrics_coupon_uses": reverse(
+                    "saas_api_coupon_uses", args=(self.provider, self.coupon.code)
+                )
+            },
+        }
         update_context_urls(context, urls)
         return context
 
@@ -175,29 +196,36 @@ class PlansMetricsView(ProviderMixin, TemplateView):
       - ``request`` The HTTP request object
     """
 
-    template_name = 'saas/metrics/plans.html'
+    template_name = "saas/metrics/plans.html"
 
     def get_context_data(self, **kwargs):
         context = super(PlansMetricsView, self).get_context_data(**kwargs)
-        context.update({
-            "title": "Plans",
-            "tables" : json.dumps([{
-                "title": "Active subscribers",
-                "key": "plan",
-                "active": True,
-                "location": reverse(
-                    'saas_api_metrics_plans', args=(self.provider,))},
-            ]),
-            "plans": Plan.objects.filter(organization=self.provider)})
-        urls_provider = {
-            'plan_new': reverse('saas_plan_new', args=(self.provider,))}
-        if 'urls' in context:
-            if 'provider' in context['urls']:
-                context['urls']['provider'].update(urls_provider)
+        context.update(
+            {
+                "title": "Plans",
+                "tables": json.dumps(
+                    [
+                        {
+                            "title": "Active subscribers",
+                            "key": "plan",
+                            "active": True,
+                            "location": reverse(
+                                "saas_api_metrics_plans", args=(self.provider,)
+                            ),
+                        },
+                    ]
+                ),
+                "plans": Plan.objects.filter(organization=self.provider),
+            }
+        )
+        urls_provider = {"plan_new": reverse("saas_plan_new", args=(self.provider,))}
+        if "urls" in context:
+            if "provider" in context["urls"]:
+                context["urls"]["provider"].update(urls_provider)
             else:
-                context['urls'].update({'provider': urls_provider})
+                context["urls"].update({"provider": urls_provider})
         else:
-            context.update({'urls': {'provider': urls_provider}})
+            context.update({"urls": {"provider": urls_provider}})
         return context
 
 
@@ -227,7 +255,7 @@ class RevenueMetricsView(MetricsMixin, TemplateView):
       - ``request`` The HTTP request object
     """
 
-    template_name = 'saas/metrics/revenue.html'
+    template_name = "saas/metrics/revenue.html"
 
     def get_context_data(self, **kwargs):
         context = super(RevenueMetricsView, self).get_context_data(**kwargs)
@@ -235,21 +263,36 @@ class RevenueMetricsView(MetricsMixin, TemplateView):
         a_receivable = self.organization.receivables().first()
         if a_receivable:
             unit = a_receivable.orig_unit
-        context.update({
-            "title": "Sales",
-            "tables": json.dumps(
-                [{"key": "cash",
-                        "title": "Amounts",
-                        "unit": unit,
-                        "location": reverse('saas_api_revenue',
-                            args=(self.organization,))},
-                       {"key": "customer",
-                        "title": "Customers",
-                        "location": reverse('saas_api_customer',
-                            args=(self.organization,))},
-                       {"key": "balances",
-                        "title": "Balances",
-                        "unit": unit,
-                        "location": reverse('saas_api_balances',
-                            args=(self.organization,))}])})
+        context.update(
+            {
+                "title": "Sales",
+                "tables": json.dumps(
+                    [
+                        {
+                            "key": "cash",
+                            "title": "Amounts",
+                            "unit": unit,
+                            "location": reverse(
+                                "saas_api_revenue", args=(self.organization,)
+                            ),
+                        },
+                        {
+                            "key": "customer",
+                            "title": "Customers",
+                            "location": reverse(
+                                "saas_api_customer", args=(self.organization,)
+                            ),
+                        },
+                        {
+                            "key": "balances",
+                            "title": "Balances",
+                            "unit": unit,
+                            "location": reverse(
+                                "saas_api_balances", args=(self.organization,)
+                            ),
+                        },
+                    ]
+                ),
+            }
+        )
         return context

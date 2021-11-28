@@ -45,19 +45,31 @@ class Command(BaseCommand):
  database"""
 
     def add_arguments(self, parser):
-        parser.add_argument('--dry-run', action='store_true',
-            dest='dry_run', default=False,
-            help='Do not commit transactions')
-        parser.add_argument('--after', action='store',
-            dest='after', default=None,
-           help='Only accounts for records created *after* a specific datetime')
-        parser.add_argument('--at-time', action='store',
-            dest='at_time', default=None,
-            help='Specifies the time at which the command runs')
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            dest="dry_run",
+            default=False,
+            help="Do not commit transactions",
+        )
+        parser.add_argument(
+            "--after",
+            action="store",
+            dest="after",
+            default=None,
+            help="Only accounts for records created *after* a specific datetime",
+        )
+        parser.add_argument(
+            "--at-time",
+            action="store",
+            dest="at_time",
+            default=None,
+            help="Specifies the time at which the command runs",
+        )
 
     def handle(self, *args, **options):
-        dry_run = options['dry_run']
-        created_at = options['after']
+        dry_run = options["dry_run"]
+        created_at = options["after"]
         if created_at:
             created_at = datetime_or_now(created_at)
         # XXX currently unused
@@ -74,7 +86,6 @@ class Command(BaseCommand):
                 created_at = provider.created_at
             try:
                 with transaction.atomic():
-                    backend.reconcile_transfers(provider, created_at,
-                        dry_run=dry_run)
+                    backend.reconcile_transfers(provider, created_at, dry_run=dry_run)
             except ProcessorError as err:
                 self.stderr.write("error: %s" % str(err))

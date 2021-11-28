@@ -33,48 +33,56 @@ from rest_framework.generics import CreateAPIView, GenericAPIView, ListAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from .serializers import (CreateOfflineTransactionSerializer,
-    OfflineTransactionSerializer, OrganizationBalanceSerializer,
-    TransactionSerializer)
+from .serializers import (
+    CreateOfflineTransactionSerializer,
+    OfflineTransactionSerializer,
+    OrganizationBalanceSerializer,
+    TransactionSerializer,
+)
 from ..decorators import _valid_manager
 from ..docs import swagger_auto_schema, OpenAPIResponse
 from ..filters import DateRangeFilter, OrderingFilter, SearchFilter
 from ..mixins import OrganizationMixin, ProviderMixin, DateRangeContextMixin
-from ..models import (get_broker, sum_orig_amount, Subscription, Transaction,
-    Organization, Plan)
+from ..models import (
+    get_broker,
+    sum_orig_amount,
+    Subscription,
+    Transaction,
+    Organization,
+    Plan,
+)
 from ..backends import ProcessorError
-from ..pagination import (BalancePagination, StatementBalancePagination,
-    TotalPagination)
+from ..pagination import BalancePagination, StatementBalancePagination, TotalPagination
 
 
 class IncludesSyncErrorPagination(PageNumberPagination):
-
     def paginate_queryset(self, queryset, request, view=None):
-        if view and hasattr(view, 'processor_error'):
+        if view and hasattr(view, "processor_error"):
             self.detail = view.processor_error
         return super(IncludesSyncErrorPagination, self).paginate_queryset(
-            queryset, request, view=view)
+            queryset, request, view=view
+        )
 
     def get_paginated_response(self, data):
         paginated = [
-            ('count', self.page.paginator.count),
-            ('next', self.get_next_link()),
-            ('previous', self.get_previous_link()),
-            ('results', data)
+            ("count", self.page.paginator.count),
+            ("next", self.get_next_link()),
+            ("previous", self.get_previous_link()),
+            ("results", data),
         ]
-        if hasattr(self, 'detail'):
-            paginated += [('detail', self.detail)]
+        if hasattr(self, "detail"):
+            paginated += [("detail", self.detail)]
         return Response(OrderedDict(paginated))
 
 
 class TotalAnnotateMixin(object):
-
     def get_queryset(self):
         queryset = super(TotalAnnotateMixin, self).get_queryset()
         balances = sum_orig_amount(queryset)
         if len(balances) > 1:
-            raise ValueError(_("balances with multiple currency units (%s)") %
-                str(balances))
+            raise ValueError(
+                _("balances with multiple currency units (%s)") % str(balances)
+            )
         # `sum_orig_amount` guarentees at least one result.
         self.totals = balances[0]
         return queryset
@@ -85,9 +93,11 @@ class TransactionFilterMixin(DateRangeContextMixin):
     ``Transaction`` list result of a search query, filtered by dates.
     """
 
-    search_fields = ('descr',
-                     'orig_organization__full_name',
-                     'dest_organization__full_name')
+    search_fields = (
+        "descr",
+        "orig_organization__full_name",
+        "dest_organization__full_name",
+    )
 
     filter_backends = (DateRangeFilter, SearchFilter)
 
@@ -96,34 +106,35 @@ class SmartTransactionListMixin(TransactionFilterMixin):
     """
     ``Transaction`` list which is also searchable and sortable.
     """
-    ordering_fields = (
-        ('descr', 'description'),
-        ('dest_amount', 'amount'),
-        ('dest_organization__slug', 'dest_organization'),
-        ('dest_account', 'dest_account'),
-        ('orig_organization__slug', 'orig_organization'),
-        ('orig_account', 'orig_account'),
-        ('created_at', 'created_at')
-    )
-    ordering = ('created_at',)
 
-    filter_backends = (TransactionFilterMixin.filter_backends +
-        (OrderingFilter,))
+    ordering_fields = (
+        ("descr", "description"),
+        ("dest_amount", "amount"),
+        ("dest_organization__slug", "dest_organization"),
+        ("dest_account", "dest_account"),
+        ("orig_organization__slug", "orig_organization"),
+        ("orig_account", "orig_account"),
+        ("created_at", "created_at"),
+    )
+    ordering = ("created_at",)
+
+    filter_backends = TransactionFilterMixin.filter_backends + (OrderingFilter,)
 
 
 class TransactionQuerysetMixin(object):
-
     def get_queryset(self):
-        self.selector = self.request.GET.get('selector', None)
+        self.selector = self.request.GET.get("selector", None)
         if self.selector is not None:
             return Transaction.objects.filter(
                 Q(dest_account__icontains=self.selector)
-                | Q(orig_account__icontains=self.selector))
+                | Q(orig_account__icontains=self.selector)
+            )
         return Transaction.objects.all()
 
 
-class TransactionListAPIView(SmartTransactionListMixin,
-                             TransactionQuerysetMixin, ListAPIView):
+class TransactionListAPIView(
+    SmartTransactionListMixin, TransactionQuerysetMixin, ListAPIView
+):
     """
     Lists ledger transactions
 
@@ -172,12 +183,12 @@ class TransactionListAPIView(SmartTransactionListMixin,
             ]
         }
     """
+
     pagination_class = BalancePagination
     serializer_class = TransactionSerializer
 
 
 class BillingsQuerysetMixin(OrganizationMixin):
-
     def get_queryset(self):
         """
         Get the list of transactions for this organization.
@@ -185,8 +196,7 @@ class BillingsQuerysetMixin(OrganizationMixin):
         return Transaction.objects.by_customer(self.organization)
 
 
-class BillingsAPIView(SmartTransactionListMixin,
-                      BillingsQuerysetMixin, ListAPIView):
+class BillingsAPIView(SmartTransactionListMixin, BillingsQuerysetMixin, ListAPIView):
     """
     Lists subscriber transactions
 
@@ -241,12 +251,12 @@ class BillingsAPIView(SmartTransactionListMixin,
             ]
         }
     """
+
     serializer_class = TransactionSerializer
     pagination_class = StatementBalancePagination
 
 
 class ReceivablesQuerysetMixin(ProviderMixin):
-
     def get_queryset(self):
         """
         Get the list of transactions for this organization.
@@ -254,8 +264,9 @@ class ReceivablesQuerysetMixin(ProviderMixin):
         return self.provider.receivables().filter(orig_amount__gt=0)
 
 
-class ReceivablesListAPIView(TotalAnnotateMixin, SmartTransactionListMixin,
-                             ReceivablesQuerysetMixin, ListAPIView):
+class ReceivablesListAPIView(
+    TotalAnnotateMixin, SmartTransactionListMixin, ReceivablesQuerysetMixin, ListAPIView
+):
     """
     Lists provider receivables
 
@@ -308,28 +319,31 @@ class ReceivablesListAPIView(TotalAnnotateMixin, SmartTransactionListMixin,
             ]
         }
     """
+
     serializer_class = TransactionSerializer
     pagination_class = TotalPagination
 
 
 class TransferQuerysetMixin(ProviderMixin):
-
     def get_queryset(self):
         """
         Get the list of transactions for this organization.
         """
         try:
-            reconcile = not bool(self.request.GET.get('force', False))
+            reconcile = not bool(self.request.GET.get("force", False))
             return self.organization.get_transfers(reconcile=reconcile)
         except ProcessorError as err:
-            self.processor_error = _("The latest transfers might"\
-                " not be shown because there was an error with the backend"\
-                " processor (ie. %(err)s).") % {'err': str(err)}
+            self.processor_error = _(
+                "The latest transfers might"
+                " not be shown because there was an error with the backend"
+                " processor (ie. %(err)s)."
+            ) % {"err": str(err)}
             return Transaction.objects.by_organization(self.organization)
 
 
-class TransferListAPIView(SmartTransactionListMixin, TransferQuerysetMixin,
-                          ListAPIView):
+class TransferListAPIView(
+    SmartTransactionListMixin, TransferQuerysetMixin, ListAPIView
+):
     """
     Lists provider payouts
 
@@ -380,6 +394,7 @@ class TransferListAPIView(SmartTransactionListMixin, TransferQuerysetMixin,
             ]
         }
     """
+
     serializer_class = TransactionSerializer
     pagination_class = IncludesSyncErrorPagination
 
@@ -388,8 +403,9 @@ class ImportTransactionsAPIView(ProviderMixin, CreateAPIView):
 
     serializer_class = CreateOfflineTransactionSerializer
 
-    @swagger_auto_schema(responses={
-        201: OpenAPIResponse("", OfflineTransactionSerializer)})
+    @swagger_auto_schema(
+        responses={201: OpenAPIResponse("", OfflineTransactionSerializer)}
+    )
     def post(self, request, *args, **kwargs):
         """
         Creates an offline transaction
@@ -496,46 +512,53 @@ class ImportTransactionsAPIView(ProviderMixin, CreateAPIView):
             }
 
         """
-        return super(ImportTransactionsAPIView, self).post(
-            request, *args, **kwargs)
+        return super(ImportTransactionsAPIView, self).post(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        parts = serializer.validated_data['subscription'].split(
-            Subscription.SEP)
+        parts = serializer.validated_data["subscription"].split(Subscription.SEP)
         if len(parts) != 2:
-            raise ValidationError({
-                'detail': _("Invalid subscription/plan field format")})
+            raise ValidationError(
+                {"detail": _("Invalid subscription/plan field format")}
+            )
         subscriber = parts[0]
         plan = parts[1]
         subscriber = Organization.objects.filter(slug=subscriber).first()
         if subscriber is None:
-            raise ValidationError({'detail': _("Invalid subscriber")})
-        plan = Plan.objects.filter(
-            slug=plan, organization=self.organization).first()
+            raise ValidationError({"detail": _("Invalid subscriber")})
+        plan = Plan.objects.filter(slug=plan, organization=self.organization).first()
         if plan is None:
-            raise ValidationError({'detail': _("Invalid plan")})
-        subscription = Subscription.objects.active_for(
-            organization=subscriber).filter(plan=plan).first()
+            raise ValidationError({"detail": _("Invalid plan")})
+        subscription = (
+            Subscription.objects.active_for(organization=subscriber)
+            .filter(plan=plan)
+            .first()
+        )
         if subscription is None:
-            raise ValidationError({
-                'detail': _("Invalid combination of subscriber and plan,"\
-" or the subscription is no longer active.")})
+            raise ValidationError(
+                {
+                    "detail": _(
+                        "Invalid combination of subscriber and plan,"
+                        " or the subscription is no longer active."
+                    )
+                }
+            )
         transactions = Transaction.objects.offline_payment(
-            subscription, serializer.validated_data['amount'],
-            descr=serializer.validated_data['descr'], user=self.request.user,
-            created_at=serializer.validated_data.get('created_at'))
+            subscription,
+            serializer.validated_data["amount"],
+            descr=serializer.validated_data["descr"],
+            user=self.request.user,
+            created_at=serializer.validated_data.get("created_at"),
+        )
 
         result_data = {
-            'detail': _("Transaction imported successfully."),
-            'results': TransactionSerializer(
-                many=True).to_representation(transactions)
+            "detail": _("Transaction imported successfully."),
+            "results": TransactionSerializer(many=True).to_representation(transactions),
         }
         headers = self.get_success_headers(result_data)
-        return Response(result_data,
-            status=status.HTTP_201_CREATED, headers=headers)
+        return Response(result_data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class StatementBalanceAPIView(OrganizationMixin, GenericAPIView):
@@ -561,16 +584,20 @@ class StatementBalanceAPIView(OrganizationMixin, GenericAPIView):
             "balance_unit": "usd"
         }
     """
+
     serializer_class = OrganizationBalanceSerializer
     pagination_class = None
 
     def get(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
-        balance_amount, balance_unit \
-            = Transaction.objects.get_statement_balance(self.organization)
-        return Response(self.get_serializer_class()().to_representation(
-            {'balance_amount': balance_amount,
-             'balance_unit': balance_unit}))
+        # pylint:disable=unused-argument
+        balance_amount, balance_unit = Transaction.objects.get_statement_balance(
+            self.organization
+        )
+        return Response(
+            self.get_serializer_class()().to_representation(
+                {"balance_amount": balance_amount, "balance_unit": balance_unit}
+            )
+        )
 
     def delete(self, request, *args, **kwargs):
         """
@@ -592,7 +619,7 @@ class StatementBalanceAPIView(OrganizationMixin, GenericAPIView):
         """
         return self.destroy(request, *args, **kwargs)
 
-    def destroy(self, request, *args, **kwargs): #pylint:disable=unused-argument
+    def destroy(self, request, *args, **kwargs):  # pylint:disable=unused-argument
         if not _valid_manager(request, [get_broker()]):
             # XXX temporary workaround to provide GET balance API
             # to subscribers and providers.

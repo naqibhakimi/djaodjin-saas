@@ -22,23 +22,22 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#pylint:disable=useless-super-delegation
+# pylint:disable=useless-super-delegation
 
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import (RetrieveAPIView,
-    RetrieveUpdateDestroyAPIView)
+from rest_framework.generics import RetrieveAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
 from ..backends import ProcessorError
 from ..docs import OpenAPIResponse, swagger_auto_schema, Parameter, IN_PATH
 from ..mixins import OrganizationMixin
 from ..models import get_broker
-from .serializers import (BankSerializer, CardSerializer,
-    CardTokenSerializer)
+from .serializers import BankSerializer, CardSerializer, CardTokenSerializer
 
-#pylint: disable=no-init
+# pylint: disable=no-init
+
 
 class RetrieveBankAPIView(OrganizationMixin, RetrieveAPIView):
     """
@@ -72,16 +71,15 @@ class RetrieveBankAPIView(OrganizationMixin, RetrieveAPIView):
           "balance_unit": "usd"
         }
     """
+
     serializer_class = BankSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        #pylint: disable=unused-argument
-        return Response(
-            self.organization.retrieve_bank())
+        # pylint: disable=unused-argument
+        return Response(self.organization.retrieve_bank())
 
 
-class PaymentMethodDetailAPIView(OrganizationMixin,
-                                 RetrieveUpdateDestroyAPIView):
+class PaymentMethodDetailAPIView(OrganizationMixin, RetrieveUpdateDestroyAPIView):
     """
     Retrieves a payment method
 
@@ -115,10 +113,11 @@ class PaymentMethodDetailAPIView(OrganizationMixin,
           "exp_date": "12/2019"
         }
     """
+
     serializer_class = CardSerializer
 
     def get_serializer_class(self):
-        if self.request.method.lower() in ('put',):
+        if self.request.method.lower() in ("put",):
             return CardTokenSerializer
         return super(PaymentMethodDetailAPIView, self).get_serializer_class()
 
@@ -141,20 +140,17 @@ class PaymentMethodDetailAPIView(OrganizationMixin,
 
             DELETE /api/billing/xia/card/ HTTP/1.1
         """
-        return super(PaymentMethodDetailAPIView, self).delete(
-            request, *args, **kwargs)
+        return super(PaymentMethodDetailAPIView, self).delete(request, *args, **kwargs)
+
+    @swagger_auto_schema(manual_parameters=[Parameter("update", IN_PATH, type="bool")])
+    def get(self, request, *args, **kwargs):
+        return super(PaymentMethodDetailAPIView, self).get(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        manual_parameters=[
-            Parameter('update', IN_PATH, type='bool')
-        ])
-    def get(self, request, *args, **kwargs):
-        return super(PaymentMethodDetailAPIView, self).get(
-            request, *args, **kwargs)
-
-    @swagger_auto_schema(responses={
-        200: OpenAPIResponse("Update successful", CardSerializer),
-    })
+        responses={
+            200: OpenAPIResponse("Update successful", CardSerializer),
+        }
+    )
     def put(self, request, *args, **kwargs):
         """
         Updates a payment method
@@ -189,41 +185,43 @@ class PaymentMethodDetailAPIView(OrganizationMixin,
               "exp_date": "12/2019"
             }
         """
-        return super(PaymentMethodDetailAPIView, self).put(
-            request, *args, **kwargs)
+        return super(PaymentMethodDetailAPIView, self).put(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         self.organization.delete_card()
-        return Response({
-            'detail': _("Your credit card is no longer on file with us.")},
-            status=status.HTTP_200_OK)
+        return Response(
+            {"detail": _("Your credit card is no longer on file with us.")},
+            status=status.HTTP_200_OK,
+        )
 
     def retrieve(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         resp_data = self.organization.retrieve_card()
-        if request.query_params.get('update', False):
-            resp_data.update({
-                'processor':
-                self.organization.processor_backend.get_payment_context(
-                    get_broker(),
-                    self.organization.processor_card_key,
-                    subscriber_email=self.organization.email,
-                    subscriber_slug=self.organization.slug)
-            })
+        if request.query_params.get("update", False):
+            resp_data.update(
+                {
+                    "processor": self.organization.processor_backend.get_payment_context(
+                        get_broker(),
+                        self.organization.processor_card_key,
+                        subscriber_email=self.organization.email,
+                        subscriber_slug=self.organization.slug,
+                    )
+                }
+            )
         return Response(resp_data)
 
     def update(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
-        partial = kwargs.pop('partial', False)
-        serializer = self.get_serializer_class()(
-            data=request.data, partial=partial)
+        # pylint:disable=unused-argument
+        partial = kwargs.pop("partial", False)
+        serializer = self.get_serializer_class()(data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        token = serializer.validated_data.get('token')
+        token = serializer.validated_data.get("token")
         try:
             new_card = self.organization.update_card(token, self.request.user)
         except ProcessorError as err:
             raise ValidationError(err)
-        new_card.update({
-            'detail': _("Your credit card on file was sucessfully updated.")})
+        new_card.update(
+            {"detail": _("Your credit card on file was sucessfully updated.")}
+        )
         return Response(new_card)

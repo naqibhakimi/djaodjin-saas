@@ -28,14 +28,20 @@ API URLs for a provider plans
 
 from django.conf.urls import url
 
-from ....api.plans import (PlanListCreateAPIView, PlanDetailAPIView)
+from ....api.plans import PlanListCreateAPIView, PlanDetailAPIView
 from ....settings import ACCT_REGEX
 
 
 urlpatterns = [
-    url(r'^profile/(?P<organization>%s)/plans/(?P<plan>%s)/?'
+    url(
+        r"^profile/(?P<organization>%s)/plans/(?P<plan>%s)/?"
         % (ACCT_REGEX, ACCT_REGEX),
-        PlanDetailAPIView.as_view(), name='saas_api_plan'),
-    url(r'^profile/(?P<organization>%s)/plans/?' % ACCT_REGEX,
-        PlanListCreateAPIView.as_view(), name='saas_api_plans'),
+        PlanDetailAPIView.as_view(),
+        name="saas_api_plan",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/plans/?" % ACCT_REGEX,
+        PlanListCreateAPIView.as_view(),
+        name="saas_api_plans",
+    ),
 ]

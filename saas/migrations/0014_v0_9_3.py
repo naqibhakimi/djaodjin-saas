@@ -8,13 +8,15 @@ import django_countries.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('saas', '0013_0_9_0'),
+        ("saas", "0013_0_9_0"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='organization',
-            name='nb_renewal_attempts',
-            field=models.PositiveIntegerField(default=0, help_text='Number of successive failed charges'),
+            model_name="organization",
+            name="nb_renewal_attempts",
+            field=models.PositiveIntegerField(
+                default=0, help_text="Number of successive failed charges"
+            ),
         ),
     ]

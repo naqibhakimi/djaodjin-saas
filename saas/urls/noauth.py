@@ -31,10 +31,12 @@ from ..views.plans import CartPlanListView
 
 
 urlpatterns = [
-    url(r'^legal/(?P<agreement>%s)/$' % ACCT_REGEX,
-        AgreementDetailView.as_view(), name='legal_agreement'),
-    url(r'^legal/$', AgreementListView.as_view(), name='legal_agreement_list'),
-    url(r'^pricing/', CartPlanListView.as_view(), name='saas_cart_plan_list'),
-    url(r'^redeem/', RedeemCouponView.as_view(),
-        name='saas_redeem_coupon'),
+    url(
+        r"^legal/(?P<agreement>%s)/$" % ACCT_REGEX,
+        AgreementDetailView.as_view(),
+        name="legal_agreement",
+    ),
+    url(r"^legal/$", AgreementListView.as_view(), name="legal_agreement_list"),
+    url(r"^pricing/", CartPlanListView.as_view(), name="saas_cart_plan_list"),
+    url(r"^redeem/", RedeemCouponView.as_view(), name="saas_redeem_coupon"),
 ]

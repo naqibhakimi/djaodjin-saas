@@ -22,7 +22,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-'''URL for the request user to sign legal agreements.'''
+"""URL for the request user to sign legal agreements."""
 
 from django.conf.urls import url
 
@@ -33,12 +33,19 @@ from ..views.roles import RoleImplicitGrantAcceptView
 
 
 urlpatterns = [
-    url(r'users/roles/accept/$',
+    url(
+        r"users/roles/accept/$",
         RoleImplicitGrantAcceptView.as_view(),
-        name='saas_role_implicit_grant_accept'),
-    url(r'users/roles/accept/(?P<verification_key>%s)/' % (
-        VERIFICATION_KEY_RE),
-        RoleGrantAcceptView.as_view(), name='saas_role_grant_accept'),
-    url(r'^legal/(?P<agreement>%s)/sign/' % ACCT_REGEX,
-        AgreementSignView.as_view(), name='legal_sign_agreement'),
+        name="saas_role_implicit_grant_accept",
+    ),
+    url(
+        r"users/roles/accept/(?P<verification_key>%s)/" % (VERIFICATION_KEY_RE),
+        RoleGrantAcceptView.as_view(),
+        name="saas_role_grant_accept",
+    ),
+    url(
+        r"^legal/(?P<agreement>%s)/sign/" % ACCT_REGEX,
+        AgreementSignView.as_view(),
+        name="legal_sign_agreement",
+    ),
 ]

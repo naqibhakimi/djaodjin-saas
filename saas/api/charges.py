@@ -27,12 +27,20 @@ from django.http import Http404
 from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import status
-from rest_framework.generics import (CreateAPIView, ListAPIView,
-    GenericAPIView, RetrieveAPIView)
+from rest_framework.generics import (
+    CreateAPIView,
+    ListAPIView,
+    GenericAPIView,
+    RetrieveAPIView,
+)
 from rest_framework.response import Response
 
-from .serializers import (ChargeSerializer, EmailChargeReceiptSerializer,
-    RefundChargeSerializer, ValidationErrorSerializer)
+from .serializers import (
+    ChargeSerializer,
+    EmailChargeReceiptSerializer,
+    RefundChargeSerializer,
+    ValidationErrorSerializer,
+)
 from .. import signals
 from ..docs import OpenAPIResponse, no_body, swagger_auto_schema
 from ..filters import DateRangeFilter, OrderingFilter, SearchFilter
@@ -41,7 +49,8 @@ from ..models import Charge, InsufficientFunds
 from ..mixins import ChargeMixin, OrganizationMixin
 from ..pagination import TotalPagination
 
-#pylint: disable=no-init
+# pylint: disable=no-init
+
 
 class RetrieveChargeMixin(ChargeMixin):
     """
@@ -53,9 +62,10 @@ class RetrieveChargeMixin(ChargeMixin):
     of a ``Charge`` in order to deal with latency and service errors
     from the processor.
     """
+
     model = Charge
-    slug_field = 'processor_key'
-    slug_url_kwarg = 'organization' # See comment in urls.api.subscriber.charges
+    slug_field = "processor_key"
+    slug_url_kwarg = "organization"  # See comment in urls.api.subscriber.charges
 
     def get_object(self, queryset=None):
         charge = super(RetrieveChargeMixin, self).get_object(queryset)
@@ -93,6 +103,7 @@ class ChargeResourceView(RetrieveChargeMixin, RetrieveAPIView):
             "state": "DONE"
         }
     """
+
     serializer_class = ChargeSerializer
 
 
@@ -100,31 +111,26 @@ class SmartChargeListMixin(object):
     """
     Subscriber list which is also searchable and sortable.
     """
-    search_fields = (
-        'description',
-        'processor_key',
-        'customer__full_name'
-    )
+
+    search_fields = ("description", "processor_key", "customer__full_name")
     ordering_fields = (
-        ('description', 'description'),
-        ('amount', 'amount'),
-        ('customer__full_name', 'Full name'),
-        ('created_at', 'created_at')
+        ("description", "description"),
+        ("amount", "amount"),
+        ("customer__full_name", "Full name"),
+        ("created_at", "created_at"),
     )
-    ordering = ('created_at',)
+    ordering = ("created_at",)
 
     filter_backends = (DateRangeFilter, OrderingFilter, SearchFilter)
 
 
 class ChargeQuerysetMixin(object):
-
     @staticmethod
     def get_queryset():
         return Charge.objects.all()
 
 
-class ChargeListAPIView(SmartChargeListMixin,
-                        ChargeQuerysetMixin, ListAPIView):
+class ChargeListAPIView(SmartChargeListMixin, ChargeQuerysetMixin, ListAPIView):
     """
     Lists processor charges
 
@@ -170,24 +176,24 @@ class ChargeListAPIView(SmartChargeListMixin,
             }]
         }
     """
+
     serializer_class = ChargeSerializer
     pagination_class = TotalPagination
 
     def get_queryset(self):
         queryset = super(ChargeListAPIView, self).get_queryset()
-        self.totals = queryset.aggregate('unit', 'amount')
+        self.totals = queryset.aggregate("unit", "amount")
         return queryset
 
 
 class OrganizationChargeQuerysetMixin(OrganizationMixin):
-
     def get_queryset(self):
         return Charge.objects.by_customer(self.organization)
 
 
-class OrganizationChargeListAPIView(SmartChargeListMixin,
-                                    OrganizationChargeQuerysetMixin,
-                                    ListAPIView):
+class OrganizationChargeListAPIView(
+    SmartChargeListMixin, OrganizationChargeQuerysetMixin, ListAPIView
+):
 
     """
     Lists all charges for a subscriber
@@ -222,6 +228,7 @@ class OrganizationChargeListAPIView(SmartChargeListMixin,
                 "state": "DONE"
             } ...]
     """
+
     serializer_class = ChargeSerializer
     pagination_class = TotalPagination
 
@@ -274,12 +281,16 @@ class ChargeRefundAPIView(RetrieveChargeMixin, CreateAPIView):
             "state": "DONE"
         }
     """
+
     serializer_class = RefundChargeSerializer
 
-    @swagger_auto_schema(responses={
-        200: OpenAPIResponse("Refund successful", ChargeSerializer),
-        400: OpenAPIResponse("parameters error", ValidationErrorSerializer)})
-    def post(self, request, *args, **kwargs): #pylint: disable=unused-argument
+    @swagger_auto_schema(
+        responses={
+            200: OpenAPIResponse("Refund successful", ChargeSerializer),
+            400: OpenAPIResponse("parameters error", ValidationErrorSerializer),
+        }
+    )
+    def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.object = self.get_object()
@@ -291,30 +302,34 @@ class ChargeRefundAPIView(RetrieveChargeMixin, CreateAPIView):
                 msg = _("You cannot refund a pending charge.")
             else:
                 msg = _("You cannot refund a failed charge.")
-            return Response({"detail": msg},
-                status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response({"detail": msg}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
         refunded_amount = 0
         with transaction.atomic():
             try:
-                for line in serializer.validated_data.get('lines', []):
+                for line in serializer.validated_data.get("lines", []):
                     try:
-                        line_refunded_amount = int(line.get(
-                            'refunded_amount', 0))
-                        self.object.refund(int(line['num']),
+                        line_refunded_amount = int(line.get("refunded_amount", 0))
+                        self.object.refund(
+                            int(line["num"]),
                             refunded_amount=line_refunded_amount,
-                            user=request.user)
+                            user=request.user,
+                        )
                         refunded_amount += line_refunded_amount
                     except ValueError:
                         raise Http404(
-                         _("Unable to retrieve line '%(lineno)s' in %(charge)s")
-                            % {'lineno': line, 'charge': self.object})
+                            _("Unable to retrieve line '%(lineno)s' in %(charge)s")
+                            % {"lineno": line, "charge": self.object}
+                        )
             except InsufficientFunds as insufficient_funds_err:
-                return Response({"detail": str(insufficient_funds_err)},
-                    status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        self.object.detail = _("%(amount)s refunded successfully"\
-" on charge %(charge_id)s.") % {
-            'amount': as_money(refunded_amount, self.object.unit),
-            'charge_id': self.object.processor_key
+                return Response(
+                    {"detail": str(insufficient_funds_err)},
+                    status=status.HTTP_405_METHOD_NOT_ALLOWED,
+                )
+        self.object.detail = _(
+            "%(amount)s refunded successfully" " on charge %(charge_id)s."
+        ) % {
+            "amount": as_money(refunded_amount, self.object.unit),
+            "charge_id": self.object.processor_key,
         }
         return Response(ChargeSerializer().to_representation(self.object))
 
@@ -346,15 +361,22 @@ class EmailChargeReceiptAPIView(RetrieveChargeMixin, GenericAPIView):
         }
 
     """
+
     serializer_class = EmailChargeReceiptSerializer
 
     @swagger_auto_schema(request_body=no_body)
-    def post(self, request, *args, **kwargs): #pylint: disable=unused-argument
+    def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
         self.object = self.get_object()
         signals.charge_updated.send(
-            sender=__name__, charge=self.object, user=request.user)
-        return Response(self.get_serializer().to_representation({
-            'charge_id': self.object.processor_key,
-            'email': self.object.customer.email,
-            'detail': _("A copy of the receipt was sent to %(email)s.") % {
-                'email': self.object.customer.email}}))
+            sender=__name__, charge=self.object, user=request.user
+        )
+        return Response(
+            self.get_serializer().to_representation(
+                {
+                    "charge_id": self.object.processor_key,
+                    "email": self.object.customer.email,
+                    "detail": _("A copy of the receipt was sent to %(email)s.")
+                    % {"email": self.object.customer.email},
+                }
+            )
+        )

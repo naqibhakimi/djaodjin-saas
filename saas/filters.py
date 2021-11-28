@@ -30,8 +30,11 @@ from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.utils.encoding import force_text
 from django.utils.timezone import utc
-from rest_framework.filters import (OrderingFilter as BaseOrderingFilter,
-    SearchFilter as BaseSearchFilter, BaseFilterBackend)
+from rest_framework.filters import (
+    OrderingFilter as BaseOrderingFilter,
+    SearchFilter as BaseSearchFilter,
+    BaseFilterBackend,
+)
 from rest_framework.compat import distinct
 
 from . import settings
@@ -50,12 +53,11 @@ class SearchFilter(BaseSearchFilter):
 
     @staticmethod
     def filter_valid_fields(queryset, fields, view):
-        #pylint:disable=protected-access
-        model_fields = set([
-            field.name for field in queryset.model._meta.get_fields()])
+        # pylint:disable=protected-access
+        model_fields = set([field.name for field in queryset.model._meta.get_fields()])
         # We add all the fields that could be aliases then filter out the ones
         # which are not present in the model.
-        alternate_fields = getattr(view, 'alternate_fields', {})
+        alternate_fields = getattr(view, "alternate_fields", {})
         for field in fields:
             alternate_field = alternate_fields.get(field, None)
             if alternate_field:
@@ -66,8 +68,8 @@ class SearchFilter(BaseSearchFilter):
 
         valid_fields = []
         for field in fields:
-            if '__' in field:
-                relation, rel_field = field.split('__')
+            if "__" in field:
+                relation, rel_field = field.split("__")
                 try:
                     # check if the field is a relation
                     rel = queryset.model._meta.get_field(relation).remote_field
@@ -84,7 +86,7 @@ class SearchFilter(BaseSearchFilter):
         return tuple(valid_fields)
 
     def get_valid_fields(self, request, queryset, view, context=None):
-        #pylint:disable=protected-access,unused-argument
+        # pylint:disable=protected-access,unused-argument
         if context is None:
             context = {}
 
@@ -95,15 +97,18 @@ class SearchFilter(BaseSearchFilter):
         # if there are no fields (due to empty query params or wrong
         # fields we fallback to fields specified in the view
         if not fields:
-            fields = getattr(view, 'search_fields', [])
+            fields = getattr(view, "search_fields", [])
             fields = self.filter_valid_fields(queryset, fields, view)
         return fields
 
     def filter_queryset(self, request, queryset, view):
         search_fields = self.get_valid_fields(request, queryset, view)
         search_terms = self.get_search_terms(request)
-        LOGGER.debug("[SearchFilter] search_terms=%s, search_fields=%s",
-            search_terms, search_fields)
+        LOGGER.debug(
+            "[SearchFilter] search_terms=%s, search_fields=%s",
+            search_terms,
+            search_fields,
+        )
 
         if not search_fields or not search_terms:
             return queryset
@@ -117,8 +122,7 @@ class SearchFilter(BaseSearchFilter):
         conditions = []
         for search_term in search_terms:
             queries = [
-                models.Q(**{orm_lookup: search_term})
-                for orm_lookup in orm_lookups
+                models.Q(**{orm_lookup: search_term}) for orm_lookup in orm_lookups
             ]
             conditions.append(reduce(operator.or_, queries))
         queryset = queryset.filter(reduce(operator.and_, conditions))
@@ -132,35 +136,35 @@ class SearchFilter(BaseSearchFilter):
         return queryset
 
     def get_schema_operation_parameters(self, view):
-        search_fields = getattr(view, 'search_fields', [])
-        search_fields_description = "search for matching text in %s"  % (
-            ', '.join(search_fields))
+        search_fields = getattr(view, "search_fields", [])
+        search_fields_description = "search for matching text in %s" % (
+            ", ".join(search_fields)
+        )
         return [
             {
-                'name': self.search_param,
-                'required': False,
-                'in': 'query',
-                'description': force_text(search_fields_description),
-                'schema': {
-                    'type': 'string',
+                "name": self.search_param,
+                "required": False,
+                "in": "query",
+                "description": force_text(search_fields_description),
+                "schema": {
+                    "type": "string",
                 },
             },
         ]
 
 
 class OrderingFilter(BaseOrderingFilter):
-
     def get_valid_fields(self, queryset, view, context=None):
-        #pylint:disable=protected-access
+        # pylint:disable=protected-access
         if context is None:
             context = {}
 
-        model_fields = set([
-            field.name for field in queryset.model._meta.get_fields()])
+        model_fields = set([field.name for field in queryset.model._meta.get_fields()])
         # XXX base
         base_fields = super(OrderingFilter, self).get_valid_fields(
-            queryset, view, context=context)
-        alternate_fields = getattr(view, 'alternate_fields', {})
+            queryset, view, context=context
+        )
+        alternate_fields = getattr(view, "alternate_fields", {})
         for field in base_fields:
             alternate_field = alternate_fields.get(field[0], None)
             if alternate_field:
@@ -170,8 +174,8 @@ class OrderingFilter(BaseOrderingFilter):
                     base_fields += [(alternate_field, alternate_field)]
         valid_fields = []
         for field in base_fields:
-            if '__' in field[0]:
-                relation, rel_field = field[0].split('__')
+            if "__" in field[0]:
+                relation, rel_field = field[0].split("__")
                 try:
                     # check if the field is a relation
                     rel = queryset.model._meta.get_field(relation).remote_field
@@ -187,20 +191,21 @@ class OrderingFilter(BaseOrderingFilter):
         return tuple(valid_fields)
 
     def remove_invalid_fields(self, queryset, fields, view, request):
-        valid_fields = {item[1]: item[0]
-            for item in self.get_valid_fields(
-                queryset, view, {'request': request})}
+        valid_fields = {
+            item[1]: item[0]
+            for item in self.get_valid_fields(queryset, view, {"request": request})
+        }
         ordering = []
         for term in fields:
             alias = term
             reverse = False
-            if alias.startswith('-'):
+            if alias.startswith("-"):
                 alias = alias[1:]
                 reverse = True
             real_field = valid_fields.get(alias)
             if real_field:
                 if reverse:
-                    real_field = '-' + real_field
+                    real_field = "-" + real_field
                 ordering.append(real_field)
         return ordering
 
@@ -211,54 +216,61 @@ class OrderingFilter(BaseOrderingFilter):
         ordering = []
         default = self.get_default_ordering(view)
         if default:
-            ordering = self.remove_invalid_fields(
-                queryset, default, view, request)
+            ordering = self.remove_invalid_fields(queryset, default, view, request)
         default_ordering = list(ordering)
         params = request.query_params.getlist(self.ordering_param)
         if params:
             if isinstance(params, six.string_types):
-                params = params.split(',')
+                params = params.split(",")
             fields = [param.strip() for param in params]
-            alternate_fields = getattr(view, 'alternate_fields', {})
+            alternate_fields = getattr(view, "alternate_fields", {})
             for field in fields:
                 reverse = False
-                if field.startswith('-'):
+                if field.startswith("-"):
                     field = field[1:]
                     reverse = True
                 alternate_field = alternate_fields.get(field, None)
                 if alternate_field:
                     if reverse:
                         if isinstance(alternate_field, (list, tuple)):
-                            fields += ['-%s' % item for item in alternate_field]
+                            fields += ["-%s" % item for item in alternate_field]
                         else:
-                            fields += ['-%s' % alternate_field]
+                            fields += ["-%s" % alternate_field]
                     else:
                         if isinstance(alternate_field, (list, tuple)):
                             fields += alternate_field
                         else:
                             fields += [alternate_field]
-            ordering = self.remove_invalid_fields(
-                queryset, fields, view, request) + default_ordering
-        LOGGER.debug("[OrderingFilter] params=%s, default_ordering=%s,"\
-            " ordering_fields=%s", params, default_ordering, ordering)
+            ordering = (
+                self.remove_invalid_fields(queryset, fields, view, request)
+                + default_ordering
+            )
+        LOGGER.debug(
+            "[OrderingFilter] params=%s, default_ordering=%s," " ordering_fields=%s",
+            params,
+            default_ordering,
+            ordering,
+        )
         return ordering
 
     def get_schema_operation_parameters(self, view):
         # validating presence of coreapi and coreschema
         super(OrderingFilter, self).get_schema_fields(view)
-        ordering_fields = getattr(view, 'ordering_fields', [])
-        sort_fields_description = "sort by %s. If a field is preceded by"\
-            " a minus sign ('-'), the order will be reversed. Multiple 'o'"\
-            " parameters can be specified to produce a stable"\
-            " result." % ', '.join([field[1] for field in ordering_fields])
+        ordering_fields = getattr(view, "ordering_fields", [])
+        sort_fields_description = (
+            "sort by %s. If a field is preceded by"
+            " a minus sign ('-'), the order will be reversed. Multiple 'o'"
+            " parameters can be specified to produce a stable"
+            " result." % ", ".join([field[1] for field in ordering_fields])
+        )
         return [
             {
-                'name': self.ordering_param,
-                'required': False,
-                'in': 'query',
-                'description': force_text(sort_fields_description),
-                'schema': {
-                    'type': 'string',
+                "name": self.ordering_param,
+                "required": False,
+                "in": "query",
+                "description": force_text(sort_fields_description),
+                "schema": {
+                    "type": "string",
                 },
             },
         ]
@@ -267,20 +279,19 @@ class OrderingFilter(BaseOrderingFilter):
 class DateRangeFilter(BaseFilterBackend):
 
     forced_date_range = True
-    date_field = 'created_at'
-    alternate_date_field = 'date_joined'
-    start_at_param = 'start_at'
-    ends_at_param = 'ends_at'
+    date_field = "created_at"
+    alternate_date_field = "date_joined"
+    start_at_param = "start_at"
+    ends_at_param = "ends_at"
 
     def get_params(self, request, view):
-        tz_ob = parse_tz(request.GET.get('timezone'))
+        tz_ob = parse_tz(request.GET.get("timezone"))
         if not tz_ob:
             tz_ob = utc
 
         ends_at = request.GET.get(self.ends_at_param)
         start_at = request.GET.get(self.start_at_param)
-        forced_date_range = getattr(view, 'forced_date_range',
-            self.forced_date_range)
+        forced_date_range = getattr(view, "forced_date_range", self.forced_date_range)
         if forced_date_range or ends_at:
             if ends_at is not None:
                 ends_at = ends_at.strip('"')
@@ -292,9 +303,8 @@ class DateRangeFilter(BaseFilterBackend):
         return start_at, ends_at
 
     def get_date_field(self, model):
-        #pylint:disable=protected-access
-        model_fields = set([
-            field.name for field in model._meta.get_fields()])
+        # pylint:disable=protected-access
+        model_fields = set([field.name for field in model._meta.get_fields()])
         if self.date_field in model_fields:
             return self.date_field
         if self.alternate_date_field in model_fields:
@@ -308,34 +318,35 @@ class DateRangeFilter(BaseFilterBackend):
             return queryset
         kwargs = {}
         if ends_at:
-            kwargs.update({'%s__lt' % field: ends_at})
+            kwargs.update({"%s__lt" % field: ends_at})
         if start_at:
-            kwargs.update({'%s__gte' % field: start_at})
+            kwargs.update({"%s__gte" % field: start_at})
         return queryset.filter(**kwargs)
 
     def get_schema_operation_parameters(self, view):
-        fields = super(DateRangeFilter,
-            self).get_schema_operation_parameters(view)
+        fields = super(DateRangeFilter, self).get_schema_operation_parameters(view)
         fields += [
             {
-                'name': 'start_at',
-                'required': False,
-                'in': 'query',
-                'description': force_text("date/time in ISO format"\
-                        " after which records were created."),
-                'schema': {
-                    'type': 'string',
+                "name": "start_at",
+                "required": False,
+                "in": "query",
+                "description": force_text(
+                    "date/time in ISO format" " after which records were created."
+                ),
+                "schema": {
+                    "type": "string",
                 },
             },
             {
-                'name': 'ends_at',
-                'required': False,
-                'in': 'query',
-                'description': force_text("date/time in ISO format"\
-                        " before which records were created."),
-                'schema': {
-                    'type': 'string',
+                "name": "ends_at",
+                "required": False,
+                "in": "query",
+                "description": force_text(
+                    "date/time in ISO format" " before which records were created."
+                ),
+                "schema": {
+                    "type": "string",
                 },
-            }
+            },
         ]
         return fields

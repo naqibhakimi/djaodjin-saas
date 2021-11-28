@@ -28,19 +28,26 @@ URLs API for profile managers and custom roles on an Organization
 
 from django.conf.urls import url
 
-from ....api.roles import (RoleListAPIView, RoleByDescrListAPIView,
-    RoleDetailAPIView)
+from ....api.roles import RoleListAPIView, RoleByDescrListAPIView, RoleDetailAPIView
 from ....settings import ACCT_REGEX, MAYBE_EMAIL_REGEX
 
 
 urlpatterns = [
-    url(r'^profile/(?P<organization>%s)/roles/(?P<role>%s)/(?P<user>%s)/?'
+    url(
+        r"^profile/(?P<organization>%s)/roles/(?P<role>%s)/(?P<user>%s)/?"
         % (ACCT_REGEX, ACCT_REGEX, MAYBE_EMAIL_REGEX),
-        RoleDetailAPIView.as_view(), name='saas_api_role_detail'),
-    url(r'^profile/(?P<organization>%s)/roles/(?P<role>%s)/?'
+        RoleDetailAPIView.as_view(),
+        name="saas_api_role_detail",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/roles/(?P<role>%s)/?"
         % (ACCT_REGEX, ACCT_REGEX),
         RoleByDescrListAPIView.as_view(),
-        name='saas_api_roles_by_descr'),
-    url(r'^profile/(?P<organization>%s)/roles/?' % ACCT_REGEX,
-        RoleListAPIView.as_view(), name='saas_api_roles'),
+        name="saas_api_roles_by_descr",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/roles/?" % ACCT_REGEX,
+        RoleListAPIView.as_view(),
+        name="saas_api_roles",
+    ),
 ]

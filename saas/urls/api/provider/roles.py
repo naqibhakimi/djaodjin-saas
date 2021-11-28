@@ -28,17 +28,20 @@ API URLs for a provider custom roles
 
 from django.conf.urls import url
 
-from ....api.roles import (RoleDescriptionListCreateView,
-    RoleDescriptionDetailView)
+from ....api.roles import RoleDescriptionListCreateView, RoleDescriptionDetailView
 from ....settings import ACCT_REGEX
 
 
 urlpatterns = [
-    url(r'^profile/(?P<organization>%s)/roles/describe/(?P<role>%s)/?'
+    url(
+        r"^profile/(?P<organization>%s)/roles/describe/(?P<role>%s)/?"
         % (ACCT_REGEX, ACCT_REGEX),
         RoleDescriptionDetailView.as_view(),
-        name='saas_api_role_description_detail'),
-    url(r'^profile/(?P<organization>%s)/roles/describe/?' % ACCT_REGEX,
+        name="saas_api_role_description_detail",
+    ),
+    url(
+        r"^profile/(?P<organization>%s)/roles/describe/?" % ACCT_REGEX,
         RoleDescriptionListCreateView.as_view(),
-        name='saas_api_role_description_list'),
+        name="saas_api_role_description_list",
+    ),
 ]

@@ -22,12 +22,16 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#pylint:disable=useless-super-delegation
+# pylint:disable=useless-super-delegation
 
 from django.db import transaction
 from django.db.models import F, Q, Max
-from rest_framework.generics import (get_object_or_404,
-    GenericAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView)
+from rest_framework.generics import (
+    get_object_or_404,
+    GenericAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.response import Response
 
 from .. import settings
@@ -36,10 +40,10 @@ from ..metrics.base import abs_monthly_balances, monthly_balances
 from ..models import BalanceLine
 from ..filters import DateRangeFilter
 from ..mixins import DateRangeContextMixin
-from .serializers import (BalanceLineSerializer, MetricsSerializer,
-    UpdateRankSerializer)
+from .serializers import BalanceLineSerializer, MetricsSerializer, UpdateRankSerializer
 
-#pylint: disable=no-init
+# pylint: disable=no-init
+
 
 class BrokerBalancesAPIView(DateRangeContextMixin, GenericAPIView):
     """
@@ -81,30 +85,34 @@ class BrokerBalancesAPIView(DateRangeContextMixin, GenericAPIView):
             ]
         }
     """
+
     serializer_class = MetricsSerializer
     filter_backends = (DateRangeFilter,)
 
-    def get(self, request, *args, **kwargs): #pylint: disable=unused-argument
+    def get(self, request, *args, **kwargs):  # pylint: disable=unused-argument
         result = []
-        report = self.kwargs.get('report')
+        report = self.kwargs.get("report")
         unit = settings.DEFAULT_UNIT
-        for line in BalanceLine.objects.filter(report=report).order_by('rank'):
+        for line in BalanceLine.objects.filter(report=report).order_by("rank"):
             if line.is_positive:
                 balances_func = abs_monthly_balances
             else:
                 balances_func = monthly_balances
             values, _unit = balances_func(
-                like_account=line.selector, until=self.ends_at)
+                like_account=line.selector, until=self.ends_at
+            )
             if _unit:
                 unit = _unit
 
-            result += [{
-                'key': line.title,
-                'selector': line.selector,
-                'values': values
-            }]
-        return Response({'title': "Balances: %s" % report,
-            'unit': unit, 'scale': 0.01, 'table': result})
+            result += [{"key": line.title, "selector": line.selector, "values": values}]
+        return Response(
+            {
+                "title": "Balances: %s" % report,
+                "unit": unit,
+                "scale": 0.01,
+                "table": result,
+            }
+        )
 
 
 class BalanceLineListAPIView(ListCreateAPIView):
@@ -138,24 +146,23 @@ class BalanceLineListAPIView(ListCreateAPIView):
             ]
         }
     """
+
     serializer_class = BalanceLineSerializer
     queryset = BalanceLine.objects.all()
 
     def get_serializer_class(self):
-        if self.request.method.lower() in ('patch',):
+        if self.request.method.lower() in ("patch",):
             return UpdateRankSerializer
         return super(BalanceLineListAPIView, self).get_serializer_class()
 
     def get_queryset(self):
-        return self.queryset.filter(
-            report=self.kwargs.get('report')).order_by('rank')
+        return self.queryset.filter(report=self.kwargs.get("report")).order_by("rank")
 
     def perform_create(self, serializer):
-        last_rank = self.get_queryset().aggregate(
-            Max('rank')).get('rank__max', 0)
+        last_rank = self.get_queryset().aggregate(Max("rank")).get("rank__max", 0)
         # If the key exists and return None the default value is not applied
         last_rank = last_rank + 1 if last_rank is not None else 1
-        serializer.save(report=self.kwargs.get('report'), rank=last_rank)
+        serializer.save(report=self.kwargs.get("report"), rank=last_rank)
 
     def post(self, request, *args, **kwargs):
         """
@@ -189,11 +196,11 @@ class BalanceLineListAPIView(ListCreateAPIView):
               "rank": 1
             }
         """
-        return super(BalanceLineListAPIView, self).post(
-            request, *args, **kwargs)
+        return super(BalanceLineListAPIView, self).post(request, *args, **kwargs)
 
-    @swagger_auto_schema(responses={
-        200: OpenAPIResponse("success", BalanceLineSerializer(many=True))})
+    @swagger_auto_schema(
+        responses={200: OpenAPIResponse("success", BalanceLineSerializer(many=True))}
+    )
     def patch(self, request, *args, **kwargs):
         """
         Updates the order in which lines are displayed
@@ -236,21 +243,21 @@ class BalanceLineListAPIView(ListCreateAPIView):
         """
         with transaction.atomic():
             for move in request.data:
-                oldpos = move['oldpos']
-                newpos = move['newpos']
+                oldpos = move["oldpos"]
+                newpos = move["newpos"]
                 queryset = self.get_queryset()
                 updated = queryset.get(rank=oldpos)
                 if newpos < oldpos:
-                    queryset.filter(Q(rank__gte=newpos)
-                                    & Q(rank__lt=oldpos)).update(
-                        rank=F('rank') + 1, moved=True)
+                    queryset.filter(Q(rank__gte=newpos) & Q(rank__lt=oldpos)).update(
+                        rank=F("rank") + 1, moved=True
+                    )
                 else:
-                    queryset.filter(Q(rank__lte=newpos)
-                                    & Q(rank__gt=oldpos)).update(
-                        rank=F('rank') - 1, moved=True)
+                    queryset.filter(Q(rank__lte=newpos) & Q(rank__gt=oldpos)).update(
+                        rank=F("rank") - 1, moved=True
+                    )
                 updated.rank = newpos
                 updated.moved = True
-                updated.save(update_fields=['rank', 'moved'])
+                updated.save(update_fields=["rank", "moved"])
                 queryset.filter(moved=True).update(moved=False)
         return self.get(request, *args, **kwargs)
 
@@ -279,11 +286,12 @@ class BalanceLineDetailAPIView(RetrieveUpdateDestroyAPIView):
             "rank": 1
         }
     """
+
     serializer_class = BalanceLineSerializer
     queryset = BalanceLine.objects.all()
 
     def get_queryset(self):
-        return self.queryset.filter(report=self.kwargs.get('report'))
+        return self.queryset.filter(report=self.kwargs.get("report"))
 
     def put(self, request, *args, **kwargs):
         """
@@ -317,8 +325,7 @@ class BalanceLineDetailAPIView(RetrieveUpdateDestroyAPIView):
               "rank": 1
             }
         """
-        return super(BalanceLineDetailAPIView, self).put(
-            request, *args, **kwargs)
+        return super(BalanceLineDetailAPIView, self).put(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -334,9 +341,7 @@ class BalanceLineDetailAPIView(RetrieveUpdateDestroyAPIView):
 
             DELETE /api/metrics/balances/taxes/lines/1/ HTTP/1.1
         """
-        return super(BalanceLineDetailAPIView, self).delete(
-            request, *args, **kwargs)
+        return super(BalanceLineDetailAPIView, self).delete(request, *args, **kwargs)
 
     def get_object(self):
-        return get_object_or_404(self.get_queryset(),
-            rank=self.kwargs.get('rank'))
+        return get_object_or_404(self.get_queryset(), rank=self.kwargs.get("rank"))

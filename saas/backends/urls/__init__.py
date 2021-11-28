@@ -29,6 +29,6 @@ URLs for backends of saas Django app
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url(r'^api/', include('saas.backends.urls.api')),
-    url(r'^', include('saas.backends.urls.views')),
+    url(r"^api/", include("saas.backends.urls.api")),
+    url(r"^", include("saas.backends.urls.views")),
 ]

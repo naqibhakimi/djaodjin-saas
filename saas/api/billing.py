@@ -31,8 +31,7 @@ import csv, logging
 
 from django.contrib import messages
 from django.utils.translation import ugettext_lazy as _
-from rest_framework.generics import (CreateAPIView,
-    GenericAPIView, RetrieveAPIView)
+from rest_framework.generics import CreateAPIView, GenericAPIView, RetrieveAPIView
 from rest_framework.mixins import CreateModelMixin
 from rest_framework.response import Response
 from rest_framework import status
@@ -42,11 +41,17 @@ from ..compat import is_authenticated, StringIO
 from ..docs import swagger_auto_schema, OpenAPIResponse
 from ..mixins import BalanceAndCartMixin, CartMixin, InvoicablesMixin
 from ..models import CartItem
-from .serializers import (CartItemCreateSerializer, CartItemUploadSerializer,
-    ChargeSerializer, CheckoutSerializer, OrganizationCartSerializer,
-    RedeemCouponSerializer, ValidationErrorSerializer)
+from .serializers import (
+    CartItemCreateSerializer,
+    CartItemUploadSerializer,
+    ChargeSerializer,
+    CheckoutSerializer,
+    OrganizationCartSerializer,
+    RedeemCouponSerializer,
+    ValidationErrorSerializer,
+)
 
-#pylint: disable=no-init
+# pylint: disable=no-init
 LOGGER = logging.getLogger(__name__)
 
 
@@ -100,7 +105,8 @@ class CartItemAPIView(CartMixin, CreateAPIView):
         }
 
     """
-    #pylint: disable=no-member
+
+    # pylint: disable=no-member
 
     model = CartItem
     serializer_class = CartItemCreateSerializer
@@ -119,8 +125,7 @@ class CartItemAPIView(CartMixin, CreateAPIView):
             if serializer.is_valid():
                 items = serializer.validated_data
         if not items:
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         cart_items = []
         status_code = status.HTTP_200_OK
@@ -132,8 +137,8 @@ class CartItemAPIView(CartMixin, CreateAPIView):
             # (which cannot be directly serialized).
             if isinstance(cart_item, CartItem):
                 cart_item = serializer.to_representation(cart_item)
-            if cart_item.get('sync_on'):
-                cart_item.update({'detail': _("User was added.")})
+            if cart_item.get("sync_on"):
+                cart_item.update({"detail": _("User was added.")})
             cart_items += [cart_item]
         if len(items) > 1:
             headers = self.get_success_headers(cart_items)
@@ -143,28 +148,28 @@ class CartItemAPIView(CartMixin, CreateAPIView):
 
     @staticmethod
     def destroy_in_session(request, plan=None, email=None):
-        cart_items = request.session.get('cart_items', [])
+        cart_items = request.session.get("cart_items", [])
         serialized_cart_items = []
         is_deleted = False
         for item in cart_items:
-            if plan and item['plan'] == plan:
+            if plan and item["plan"] == plan:
                 is_deleted = True
                 continue
-            if email and item['email'] == email:
+            if email and item["email"] == email:
                 is_deleted = True
                 continue
             serialized_cart_items += [item]
         if is_deleted:
-            request.session['cart_items'] = serialized_cart_items
+            request.session["cart_items"] = serialized_cart_items
         return is_deleted
 
     @staticmethod
     def destroy_in_db(request, plan=None, email=None):
         kwargs = {}
         if plan:
-            kwargs.update({'plan__slug': plan})
+            kwargs.update({"plan__slug": plan})
         if email:
-            kwargs.update({'email': email})
+            kwargs.update({"email": email})
         CartItem.objects.get_cart(request.user, **kwargs).delete()
 
     def delete(self, request, *args, **kwargs):
@@ -181,11 +186,11 @@ class CartItemAPIView(CartMixin, CreateAPIView):
 
             DELETE /api/cart/?plan=premium HTTP/1.1
         """
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         plan = None
         email = None
-        plan = request.query_params.get('plan')
-        email = request.query_params.get('email')
+        plan = request.query_params.get("plan")
+        email = request.query_params.get("email")
         self.destroy_in_session(request, plan=plan, email=email)
         if is_authenticated(request):
             # If the user is authenticated, we delete the cart items
@@ -247,17 +252,19 @@ class CartItemUploadAPIView(CartMixin, GenericAPIView):
             "failed": []
         }
     """
+
     serializer_class = CartItemUploadSerializer
 
     def post(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument,too-many-locals
-        plan = kwargs.get('plan')
-        response = {'created': [],
-                    'updated': [],
-                    'failed': []}
-        uploaded = request.FILES.get('file')
-        filed = csv.reader(StringIO(uploaded.read().decode(
-            'utf-8', 'ignore')) if uploaded else StringIO())
+        # pylint:disable=unused-argument,too-many-locals
+        plan = kwargs.get("plan")
+        response = {"created": [], "updated": [], "failed": []}
+        uploaded = request.FILES.get("file")
+        filed = csv.reader(
+            StringIO(uploaded.read().decode("utf-8", "ignore"))
+            if uploaded
+            else StringIO()
+        )
 
         for row in filed:
             try:
@@ -265,30 +272,34 @@ class CartItemUploadAPIView(CartMixin, GenericAPIView):
                     full_name, email = row
                 elif len(row) == 3:
                     first_name, last_name, email = row
-                    full_name = '%s %s' % (first_name, last_name)
+                    full_name = "%s %s" % (first_name, last_name)
                 else:
                     raise csv.Error()
             except csv.Error:
-                response['failed'].append({'data': {'raw': row},
-                                           'error': 'Unable to parse row'})
+                response["failed"].append(
+                    {"data": {"raw": row}, "error": "Unable to parse row"}
+                )
             else:
                 serializer = CartItemCreateSerializer(
-                    data={'plan': plan,
-                          'full_name': full_name,
-                          'sync_on': email,
-                          'email': email})
+                    data={
+                        "plan": plan,
+                        "full_name": full_name,
+                        "sync_on": email,
+                        "email": email,
+                    }
+                )
                 if serializer.is_valid():
-                    cart_item, created = self.insert_item(
-                        request, **serializer.data)
+                    cart_item, created = self.insert_item(request, **serializer.data)
                     if isinstance(cart_item, CartItem):
                         cart_item = serializer.to_representation(cart_item)
                     if created:
-                        response['created'].append(cart_item)
+                        response["created"].append(cart_item)
                     else:
-                        response['updated'].append(cart_item)
+                        response["updated"].append(cart_item)
                 else:
-                    response['failed'].append({'data': serializer.data,
-                                               'error': serializer.errors})
+                    response["failed"].append(
+                        {"data": serializer.data, "error": serializer.errors}
+                    )
 
         return Response(response)
 
@@ -322,40 +333,48 @@ class CouponRedeemAPIView(GenericAPIView):
             "detail": "Coupon 'LABORDAY' was successfully applied."
         }
     """
+
     serializer_class = RedeemCouponSerializer
 
     # XXX This is not a ValidationErrorSerializer but we return a message.
     # XXX Should many return the updated cart but we are dealing with users,
     # not organizations here.
-    @swagger_auto_schema(responses={
-        200: OpenAPIResponse("", ValidationErrorSerializer)})
-    def post(self, request, *args, **kwargs): #pylint: disable=unused-argument
+    @swagger_auto_schema(
+        responses={200: OpenAPIResponse("", ValidationErrorSerializer)}
+    )
+    def post(self, request, *args, **kwargs):  # pylint: disable=unused-argument
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            coupon_code = serializer.data['code']
+            coupon_code = serializer.data["code"]
             if CartItem.objects.redeem(request.user, coupon_code):
-                details = {'detail': (
-                    _("Coupon '%(code)s' was successfully applied.") % {
-                        'code': coupon_code})}
+                details = {
+                    "detail": (
+                        _("Coupon '%(code)s' was successfully applied.")
+                        % {"code": coupon_code}
+                    )
+                }
                 headers = {}
                 # XXX Django 1.7: 500 error, argument must be an HttpRequest
                 # object, not 'Request'. Not an issue with Django 1.6.2
                 # Since we rely on the message to appear after reload of
                 # the cart page in the casperjs tests, we can't get rid
                 # of this statement just yet.
-                #pylint: disable=protected-access
-                messages.success(request._request, details['detail'])
-                return Response(details, status=status.HTTP_200_OK,
-                                headers=headers)
-            details = {'detail': (
-                _("No items can be discounted using this coupon: %(code)s.") % {
-                'code': coupon_code})}
+                # pylint: disable=protected-access
+                messages.success(request._request, details["detail"])
+                return Response(details, status=status.HTTP_200_OK, headers=headers)
+            details = {
+                "detail": (
+                    _("No items can be discounted using this coupon: %(code)s.")
+                    % {"code": coupon_code}
+                )
+            }
             return Response(details, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CheckoutAPIView(InvoicablesMixin, BalanceAndCartMixin,
-                      CreateModelMixin, RetrieveAPIView):
+class CheckoutAPIView(
+    InvoicablesMixin, BalanceAndCartMixin, CreateModelMixin, RetrieveAPIView
+):
     """
     Retrieves a cart for checkout
 
@@ -426,15 +445,15 @@ class CheckoutAPIView(InvoicablesMixin, BalanceAndCartMixin,
           }]
         }
     """
+
     serializer_class = OrganizationCartSerializer
 
     def get_serializer_class(self):
-        if self.request.method.lower() in ('post',):
+        if self.request.method.lower() in ("post",):
             return CheckoutSerializer
         return super(CheckoutAPIView, self).get_serializer_class()
 
-    @swagger_auto_schema(responses={
-        201: OpenAPIResponse("", ChargeSerializer)})
+    @swagger_auto_schema(responses={201: OpenAPIResponse("", ChargeSerializer)})
     def post(self, request, *args, **kwargs):
         """
         Checkouts a cart
@@ -488,50 +507,53 @@ of Xia",
 
     def get(self, request, *args, **kwargs):
         resp_data = {
-            'processor':
-            self.organization.processor_backend.get_payment_context(
+            "processor": self.organization.processor_backend.get_payment_context(
                 self.invoicables_provider,
                 self.organization.processor_card_key,
                 amount=self.invoicables_lines_price.amount,
                 unit=self.invoicables_lines_price.unit,
                 broker_fee_amount=self.invoicables_broker_fee_amount,
                 subscriber_email=self.organization.email,
-                subscriber_slug=self.organization.slug),
-            'results': self.get_queryset()
+                subscriber_slug=self.organization.slug,
+            ),
+            "results": self.get_queryset(),
         }
         serializer = self.get_serializer(resp_data)
         return Response(serializer.data)
 
-    def create(self, request, *args, **kwargs):#pylint:disable=unused-argument
+    def create(self, request, *args, **kwargs):  # pylint:disable=unused-argument
         serializer = CheckoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         queryset = self.get_queryset()
-        items_options = data.get('items')
+        items_options = data.get("items")
         if items_options:
             for index, item in enumerate(items_options):
-                opt_index = item['option'] - 1
+                opt_index = item["option"] - 1
                 if index >= len(queryset):
                     continue
-                if (opt_index < 0 or
-                    opt_index >= len(queryset[index]['options'])):
+                if opt_index < 0 or opt_index >= len(queryset[index]["options"]):
                     continue
-                selected = queryset[index]['options'][opt_index]
-                queryset[index]['lines'].append(selected)
-        self.organization.update_address_if_empty(country=data.get('country'),
-            region=data.get('region'), locality=data.get('locality'),
-            street_address=data.get('street_address'),
-            postal_code=data.get('postal_code'))
+                selected = queryset[index]["options"][opt_index]
+                queryset[index]["lines"].append(selected)
+        self.organization.update_address_if_empty(
+            country=data.get("country"),
+            region=data.get("region"),
+            locality=data.get("locality"),
+            street_address=data.get("street_address"),
+            postal_code=data.get("postal_code"),
+        )
 
         try:
             charge = self.organization.checkout(
-                queryset, self.request.user,
-                token=data.get('processor_token'),
-                remember_card=data.get('remember_card', False))
+                queryset,
+                self.request.user,
+                token=data.get("processor_token"),
+                remember_card=data.get("remember_card", False),
+            )
             if charge and charge.invoiced_total.amount > 0:
                 result = ChargeSerializer(charge)
                 return Response(result.data, status=status.HTTP_200_OK)
         except ProcessorError as err:
-            return Response({
-                'detail': str(err)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": str(err)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({}, status=status.HTTP_200_OK)

@@ -62,6 +62,6 @@ def url_profile(request):
     if is_authenticated_base(request):
         organization = attached_organization(request.user)
         if organization:
-            return reverse('saas_organization_profile', args=(organization,))
-        return reverse('users_profile', args=(request.user,))
+            return reverse("saas_organization_profile", args=(organization,))
+        return reverse("users_profile", args=(request.user,))
     return None

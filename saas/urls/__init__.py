@@ -30,8 +30,8 @@ from django.conf.urls import include, url
 
 
 urlpatterns = [
-    url(r'^api/', include('saas.urls.api')),
-    url(r'^', include('saas.urls.noauth')),
-    url(r'^', include('saas.urls.provider')),
-    url(r'^', include('saas.urls.subscriber')),
+    url(r"^api/", include("saas.urls.api")),
+    url(r"^", include("saas.urls.noauth")),
+    url(r"^", include("saas.urls.provider")),
+    url(r"^", include("saas.urls.subscriber")),
 ]

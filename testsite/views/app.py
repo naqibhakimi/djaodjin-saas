@@ -33,46 +33,53 @@ from saas.utils import get_organization_model
 
 class AppView(TemplateView):
 
-    template_name = 'app.html'
+    template_name = "app.html"
     organization_model = get_organization_model()
 
     @property
     def organization(self):
-        organization_slug = self.kwargs.get('organization')
+        organization_slug = self.kwargs.get("organization")
         if organization_slug:
             return self.organization_model.objects.get(slug=organization_slug)
         return self.organization_model.objects.accessible_by(
-            self.request.user, role_descr=MANAGER).first()
+            self.request.user, role_descr=MANAGER
+        ).first()
 
     def get_context_data(self, **kwargs):
         context = super(AppView, self).get_context_data(**kwargs)
         organization = self.organization
         if organization is None:
-            messages.error(self.request, "The user '%s' is not manager "\
-                "of an attached payment profile (i.e. Organization"
-                % self.request.user)
+            messages.error(
+                self.request,
+                "The user '%s' is not manager "
+                "of an attached payment profile (i.e. Organization" % self.request.user,
+            )
             return context
         try:
             context.update(organization.retrieve_card())
         except ProcessorConnectionError:
-            messages.error(self.request, "The payment processor is "\
-                "currently unreachable. Sorry for the inconvienience.")
-        context.update({'organization': organization})
-        urls = {'saas_api_checkout': reverse(
-            'saas_api_checkout', args=(organization,)),
-                'saas_api_cart': reverse('saas_api_cart'),
-                'broker': {'api_charges': reverse('saas_api_charges')}}
-        if 'urls' in context:
+            messages.error(
+                self.request,
+                "The payment processor is "
+                "currently unreachable. Sorry for the inconvienience.",
+            )
+        context.update({"organization": organization})
+        urls = {
+            "saas_api_checkout": reverse("saas_api_checkout", args=(organization,)),
+            "saas_api_cart": reverse("saas_api_cart"),
+            "broker": {"api_charges": reverse("saas_api_charges")},
+        }
+        if "urls" in context:
             for key, val in urls.iteritems():
-                if key in context['urls']:
-                    context['urls'][key].update(val)
+                if key in context["urls"]:
+                    context["urls"][key].update(val)
                 else:
-                    context['urls'].update({key: val})
+                    context["urls"].update({key: val})
         else:
-            context.update({'urls': urls})
+            context.update({"urls": urls})
         return context
 
     def get(self, request, *args, **kwargs):
         if self.organization is None:
-            return HttpResponseRedirect(reverse('saas_organization_create'))
+            return HttpResponseRedirect(reverse("saas_organization_create"))
         return super(AppView, self).get(request, *args, **kwargs)

@@ -58,13 +58,12 @@ djaodjin-saas/tree/master/saas/templates/saas/legal/agreement.html>`__).
     """
 
     model = Agreement
-    slug_url_kwarg = 'agreement'
-    template_name = 'saas/legal/agreement.html'
+    slug_url_kwarg = "agreement"
+    template_name = "saas/legal/agreement.html"
 
     def get_context_data(self, **kwargs):
         context = super(AgreementDetailView, self).get_context_data(**kwargs)
-        context.update({
-                'page': _read_agreement_file(context['agreement'].slug)})
+        context.update({"page": _read_agreement_file(context["agreement"].slug)})
         return context
 
 
@@ -86,16 +85,21 @@ templates/saas/legal/index.html>`__).
     """
 
     model = Agreement
-    slug_url_kwarg = 'agreement'
-    template_name = 'saas/legal/index.html'
+    slug_url_kwarg = "agreement"
+    template_name = "saas/legal/index.html"
 
     def get_context_data(self, **kwargs):
         context = super(AgreementListView, self).get_context_data(**kwargs)
         agreements = []
         for agreement in self.get_queryset():
-            agreements += [{'slug': agreement.slug, 'title': agreement.title,
-                'location': reverse('legal_agreement', args=(agreement,))}]
-        context['agreements'] = agreements
+            agreements += [
+                {
+                    "slug": agreement.slug,
+                    "title": agreement.title,
+                    "location": reverse("legal_agreement", args=(agreement,)),
+                }
+            ]
+        context["agreements"] = agreements
         return context
 
 
@@ -105,25 +109,26 @@ class SignatureForm(forms.ModelForm):
     """
 
     read_terms = forms.fields.BooleanField(
-        label='I have read and understand these terms and conditions',
-        widget=CheckboxInput)
+        label="I have read and understand these terms and conditions",
+        widget=CheckboxInput,
+    )
 
     class Meta:
         model = Signature
-        fields = ('read_terms',)
+        fields = ("read_terms",)
 
 
 def _read_agreement_file(slug, context=None, request=None):
     import markdown
+
     if not context:
         broker = get_broker()
-        context = {'organization': broker}
+        context = {"organization": broker}
         if settings.BUILD_ABSOLUTE_URI_CALLABLE:
-            context.update({'site_url': build_absolute_uri(request)})
+            context.update({"site_url": build_absolute_uri(request)})
     # We use context and not context=context in the following statement
     # such that the code is compatible with Django 1.7 and Django 1.8
-    return markdown.markdown(
-        render_to_string('saas/agreements/%s.md' % slug, context))
+    return markdown.markdown(render_to_string("saas/agreements/%s.md" % slug, context))
 
 
 class AgreementSignView(ProviderMixin, CreateView):
@@ -141,35 +146,43 @@ djaodjin-saas/tree/master/saas/templates/saas/legal/sign.html>`__).
       - ``organization`` The provider of the product
       - ``request`` The HTTP request object
     """
+
     # XXX ``ProviderMixin`` such that urls.pricing is available.
 
     model = Agreement
-    slug_url_kwarg = 'agreement'
-    template_name = 'saas/legal/sign.html'
+    slug_url_kwarg = "agreement"
+    template_name = "saas/legal/sign.html"
     form_class = SignatureForm
     redirect_field_name = REDIRECT_FIELD_NAME
 
     def form_valid(self, form):
-        if form.cleaned_data['read_terms']:
+        if form.cleaned_data["read_terms"]:
             Signature.objects.create_signature(
-                self.kwargs.get(self.slug_url_kwarg), self.request.user)
+                self.kwargs.get(self.slug_url_kwarg), self.request.user
+            )
             return HttpResponseRedirect(self.get_success_url())
         return self.form_invalid(form)
 
     def get_success_url(self):
         redirect_path = validate_redirect_url(
-            self.request.GET.get(REDIRECT_FIELD_NAME, None))
+            self.request.GET.get(REDIRECT_FIELD_NAME, None)
+        )
         if redirect_path:
             return redirect_path
-        return '/'
+        return "/"
 
     def get_context_data(self, **kwargs):
         context = super(AgreementSignView, self).get_context_data(**kwargs)
         redirect_path = validate_redirect_url(
-            self.request.GET.get(REDIRECT_FIELD_NAME, None))
+            self.request.GET.get(REDIRECT_FIELD_NAME, None)
+        )
         if redirect_path:
             context.update({REDIRECT_FIELD_NAME: redirect_path})
-        context.update({
-                'page': _read_agreement_file(self.kwargs.get('agreement'),
-                    request=self.request)})
+        context.update(
+            {
+                "page": _read_agreement_file(
+                    self.kwargs.get("agreement"), request=self.request
+                )
+            }
+        )
         return context

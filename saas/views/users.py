@@ -46,19 +46,21 @@ class ProductListView(UserMixin, TemplateView):
       - ``user`` The organization object users have permissions to.
       - ``request`` The HTTP request object
     """
+
     # XXX We use ``OrganizationMixin`` so that urls.pricing is defined.
 
-    template_name = 'saas/users/roles.html'
+    template_name = "saas/users/roles.html"
 
     def get_context_data(self, **kwargs):
         context = super(ProductListView, self).get_context_data(**kwargs)
         urls = {
-            'api_candidates': reverse('saas_api_search_profiles'),
-            'user': {
-                'api_accessibles': reverse(
-                    'saas_api_accessibles', args=(self.user,)),
-                'api_profile_create': reverse(
-                    'saas_api_user_profiles', args=(self.user,)),
-        }}
+            "api_candidates": reverse("saas_api_search_profiles"),
+            "user": {
+                "api_accessibles": reverse("saas_api_accessibles", args=(self.user,)),
+                "api_profile_create": reverse(
+                    "saas_api_user_profiles", args=(self.user,)
+                ),
+            },
+        }
         update_context_urls(context, urls)
         return context

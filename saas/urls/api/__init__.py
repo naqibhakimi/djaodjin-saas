@@ -22,15 +22,15 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-'''API URLs for the saas application'''
+"""API URLs for the saas application"""
 
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url(r'^', include('saas.urls.api.cart')),
-    url(r'^', include('saas.urls.api.legal')),
-    url(r'^', include('saas.urls.api.users')),
-    url(r'^', include('saas.urls.api.broker')),
-    url(r'^', include('saas.urls.api.provider')),
-    url(r'^', include('saas.urls.api.subscriber')),
+    url(r"^", include("saas.urls.api.cart")),
+    url(r"^", include("saas.urls.api.legal")),
+    url(r"^", include("saas.urls.api.users")),
+    url(r"^", include("saas.urls.api.broker")),
+    url(r"^", include("saas.urls.api.provider")),
+    url(r"^", include("saas.urls.api.subscriber")),
 ]

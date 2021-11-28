@@ -35,13 +35,24 @@ from ....api.transactions import BillingsAPIView, StatementBalanceAPIView
 
 
 urlpatterns = [
-    url(r'^billing/(?P<organization>%s)/balance/?' % settings.ACCT_REGEX,
+    url(
+        r"^billing/(?P<organization>%s)/balance/?" % settings.ACCT_REGEX,
         StatementBalanceAPIView.as_view(),
-        name='saas_api_cancel_balance_due'),
-    url(r'^billing/(?P<organization>%s)/history/?' % settings.ACCT_REGEX,
-        BillingsAPIView.as_view(), name='saas_api_billings'),
-    url(r'^billing/(?P<organization>%s)/card/?' % settings.ACCT_REGEX,
-        PaymentMethodDetailAPIView.as_view(), name='saas_api_card'),
-    url(r'^billing/(?P<organization>%s)/checkout/?' % settings.ACCT_REGEX,
-        CheckoutAPIView.as_view(), name='saas_api_checkout'),
+        name="saas_api_cancel_balance_due",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/history/?" % settings.ACCT_REGEX,
+        BillingsAPIView.as_view(),
+        name="saas_api_billings",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/card/?" % settings.ACCT_REGEX,
+        PaymentMethodDetailAPIView.as_view(),
+        name="saas_api_card",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/checkout/?" % settings.ACCT_REGEX,
+        CheckoutAPIView.as_view(),
+        name="saas_api_checkout",
+    ),
 ]

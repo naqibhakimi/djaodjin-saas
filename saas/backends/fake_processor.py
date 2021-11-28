@@ -38,13 +38,13 @@ class FakeProcessorBackend(object):
     FORWARD = 1
     REMOTE = 2
 
-    token_id = 'stripeToken'
+    token_id = "stripeToken"
 
     def __init__(self):
-        self.pub_key = settings.PROCESSOR['PUB_KEY']
-        self.priv_key = settings.PROCESSOR['PRIV_KEY']
-        self.client_id = settings.PROCESSOR.get('CLIENT_ID', None)
-        self.mode = settings.PROCESSOR.get('MODE', 0)
+        self.pub_key = settings.PROCESSOR["PUB_KEY"]
+        self.priv_key = settings.PROCESSOR["PRIV_KEY"]
+        self.client_id = settings.PROCESSOR.get("CLIENT_ID", None)
+        self.mode = settings.PROCESSOR.get("MODE", 0)
 
     @staticmethod
     def charge_distribution(charge, refunded=0, unit=settings.DEFAULT_UNIT):
@@ -64,25 +64,42 @@ class FakeProcessorBackend(object):
         distribute_unit = charge.unit
         broker_fee_amount = 0
         broker_fee_unit = charge.unit
-        return (distribute_amount, distribute_unit,
-                processor_fee_amount, processor_fee_unit,
-                broker_fee_amount, broker_fee_unit)
+        return (
+            distribute_amount,
+            distribute_unit,
+            processor_fee_amount,
+            processor_fee_unit,
+            broker_fee_amount,
+            broker_fee_unit,
+        )
 
     @staticmethod
-    def create_payment(amount, unit, provider,
-                       processor_card_key=None, token=None,
-                       descr=None, stmt_descr=None, created_at=None,
-                       broker_fee_amount=0):
-        #pylint: disable=too-many-arguments,unused-argument
+    def create_payment(
+        amount,
+        unit,
+        provider,
+        processor_card_key=None,
+        token=None,
+        descr=None,
+        stmt_descr=None,
+        created_at=None,
+        broker_fee_amount=0,
+    ):
+        # pylint: disable=too-many-arguments,unused-argument
         created_at = datetime_or_now(created_at)
         receipt_info = {
-            'last4': "1234",
-            'exp_date': created_at + datetime.timedelta(days=365),
-            'card_name': "Joe Test"
+            "last4": "1234",
+            "exp_date": created_at + datetime.timedelta(days=365),
+            "card_name": "Joe Test",
         }
         charge_key = "fake_%s" % generate_random_slug()
-        LOGGER.debug("create_payment(amount=%s, unit='%s', descr='%s') => %s",
-            amount, unit, descr, charge_key)
+        LOGGER.debug(
+            "create_payment(amount=%s, unit='%s', descr='%s') => %s",
+            amount,
+            unit,
+            descr,
+            charge_key,
+        )
         return (charge_key, created_at, receipt_info)
 
     @staticmethod
@@ -92,7 +109,11 @@ class FakeProcessorBackend(object):
         """
         LOGGER.debug(
             "create_transfer(provider=%s, amount=%s, unit=%s, descr=%s)",
-            provider, amount, unit, descr)
+            provider,
+            amount,
+            unit,
+            descr,
+        )
         created_at = datetime_or_now()
         return (generate_random_slug(), created_at)
 
@@ -102,18 +123,25 @@ class FakeProcessorBackend(object):
         """
 
     @staticmethod
-    def get_payment_context(provider, processor_card_key,
-                            amount=None, unit=None, broker_fee_amount=0,
-                            subscriber_email=None, subscriber_slug=None):
-        #pylint:disable=too-many-arguments,unused-argument
+    def get_payment_context(
+        provider,
+        processor_card_key,
+        amount=None,
+        unit=None,
+        broker_fee_amount=0,
+        subscriber_email=None,
+        subscriber_slug=None,
+    ):
+        # pylint:disable=too-many-arguments,unused-argument
         context = {}
         return context
 
     @staticmethod
     def reconcile_transfers(provider, created_at, dry_run=False):
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         raise NotImplementedError(
-            "reconcile_transfers is not implemented on FakeProcessor")
+            "reconcile_transfers is not implemented on FakeProcessor"
+        )
 
     @staticmethod
     def refund_charge(charge, amount, broker_amount=0):
@@ -128,14 +156,14 @@ class FakeProcessorBackend(object):
         return charge
 
     @staticmethod
-    def dispute_fee(amount): #pylint: disable=unused-argument
+    def dispute_fee(amount):  # pylint: disable=unused-argument
         """
         Return processing fee associated to a chargeback (i.e. $15).
         """
         return 1500
 
     @staticmethod
-    def prorate_transfer(amount, provider): #pylint: disable=unused-argument
+    def prorate_transfer(amount, provider):  # pylint: disable=unused-argument
         """
         Return processing fee associated to a transfer (i.e. nothing here).
         """

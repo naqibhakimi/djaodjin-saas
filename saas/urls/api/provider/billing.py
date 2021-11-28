@@ -31,22 +31,42 @@ from django.conf.urls import url
 from ....settings import ACCT_REGEX
 from ....api.backend import RetrieveBankAPIView
 from ....api.coupons import CouponListCreateAPIView, CouponDetailAPIView
-from ....api.transactions import (ReceivablesListAPIView,
-    TransferListAPIView, ImportTransactionsAPIView)
+from ....api.transactions import (
+    ReceivablesListAPIView,
+    TransferListAPIView,
+    ImportTransactionsAPIView,
+)
 
 urlpatterns = [
-    url(r'^billing/(?P<organization>%s)/bank/?' % ACCT_REGEX,
-        RetrieveBankAPIView.as_view(), name='saas_api_bank'),
-    url(r'^billing/(?P<organization>%s)/coupons/(?P<coupon>%s)/?'
+    url(
+        r"^billing/(?P<organization>%s)/bank/?" % ACCT_REGEX,
+        RetrieveBankAPIView.as_view(),
+        name="saas_api_bank",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/coupons/(?P<coupon>%s)/?"
         % (ACCT_REGEX, ACCT_REGEX),
-        CouponDetailAPIView.as_view(), name='saas_api_coupon_detail'),
-    url(r'^billing/(?P<organization>%s)/coupons/?'  % ACCT_REGEX,
-        CouponListCreateAPIView.as_view(), name='saas_api_coupon_list'),
-    url(r'^billing/(?P<organization>%s)/receivables/?' % ACCT_REGEX,
-        ReceivablesListAPIView.as_view(), name='saas_api_receivables'),
-    url(r'^billing/(?P<organization>%s)/transfers/import/' % ACCT_REGEX,
+        CouponDetailAPIView.as_view(),
+        name="saas_api_coupon_detail",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/coupons/?" % ACCT_REGEX,
+        CouponListCreateAPIView.as_view(),
+        name="saas_api_coupon_list",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/receivables/?" % ACCT_REGEX,
+        ReceivablesListAPIView.as_view(),
+        name="saas_api_receivables",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/transfers/import/" % ACCT_REGEX,
         ImportTransactionsAPIView.as_view(),
-        name='saas_api_import_transactions'),
-    url(r'^billing/(?P<organization>%s)/transfers/?' % ACCT_REGEX,
-        TransferListAPIView.as_view(), name='saas_api_transfer_list'),
+        name="saas_api_import_transactions",
+    ),
+    url(
+        r"^billing/(?P<organization>%s)/transfers/?" % ACCT_REGEX,
+        TransferListAPIView.as_view(),
+        name="saas_api_transfer_list",
+    ),
 ]

@@ -27,8 +27,7 @@ from django.db import IntegrityError
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
-from rest_framework.generics import (ListCreateAPIView,
-    RetrieveUpdateDestroyAPIView)
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
 from .serializers import CouponSerializer, CouponCreateSerializer
@@ -38,40 +37,36 @@ from ..models import Coupon
 from ..mixins import CouponMixin, ProviderMixin
 from ..utils import handle_uniq_error
 
-#pylint: disable=no-init
+# pylint: disable=no-init
 
 
 class SmartCouponListMixin(object):
     """
     ``Coupon`` list which is also searchable and sortable.
     """
-    search_fields = (
-        'code',
-        'description',
-        'amount',
-        'organization__full_name'
-    )
+
+    search_fields = ("code", "description", "amount", "organization__full_name")
     ordering_fields = (
-        ('code', 'code'),
-        ('created_at', 'created_at'),
-        ('description', 'description'),
-        ('ends_at', 'ends_at'),
-        ('discount_type', 'discount_type'),
-        ('amount', 'amount')
+        ("code", "code"),
+        ("created_at", "created_at"),
+        ("description", "description"),
+        ("ends_at", "ends_at"),
+        ("discount_type", "discount_type"),
+        ("amount", "amount"),
     )
-    ordering = ('ends_at',)
+    ordering = ("ends_at",)
 
     filter_backends = (OrderingFilter, SearchFilter)
 
 
 class CouponQuerysetMixin(ProviderMixin):
-
     def get_queryset(self):
         return Coupon.objects.filter(organization=self.organization)
 
 
-class CouponListCreateAPIView(SmartCouponListMixin, CouponQuerysetMixin,
-                              ListCreateAPIView):
+class CouponListCreateAPIView(
+    SmartCouponListMixin, CouponQuerysetMixin, ListCreateAPIView
+):
     """
     Lists discount codes
 
@@ -124,17 +119,16 @@ class CouponListCreateAPIView(SmartCouponListMixin, CouponQuerysetMixin,
             ]
         }
     """
+
     serializer_class = CouponSerializer
-    filter_backends = (SmartCouponListMixin.filter_backends +
-        (DateRangeFilter,))
+    filter_backends = SmartCouponListMixin.filter_backends + (DateRangeFilter,)
 
     def get_serializer_class(self):
-        if self.request.method.lower() in ('post',):
+        if self.request.method.lower() in ("post",):
             return CouponCreateSerializer
         return super(CouponListCreateAPIView, self).get_serializer_class()
 
-    @swagger_auto_schema(responses={
-        201: OpenAPIResponse("created", CouponSerializer)})
+    @swagger_auto_schema(responses={201: OpenAPIResponse("created", CouponSerializer)})
     def post(self, request, *args, **kwargs):
         """
         Creates a discount code
@@ -179,22 +173,23 @@ class CouponListCreateAPIView(SmartCouponListMixin, CouponQuerysetMixin,
         return self.create(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # check plan belongs to organization
-        plan = serializer.validated_data.get('plan')
+        plan = serializer.validated_data.get("plan")
         if plan and plan.organization != self.organization:
-            raise ValidationError(
-                _("The plan does not belong to the organization."))
+            raise ValidationError(_("The plan does not belong to the organization."))
         try:
             serializer.save(organization=self.organization)
         except IntegrityError as err:
             handle_uniq_error(err)
         headers = self.get_success_headers(serializer.data)
-        return Response(CouponSerializer().to_representation(
-            serializer.instance), status=status.HTTP_201_CREATED,
-            headers=headers)
+        return Response(
+            CouponSerializer().to_representation(serializer.instance),
+            status=status.HTTP_201_CREATED,
+            headers=headers,
+        )
 
 
 class CouponDetailAPIView(CouponMixin, RetrieveUpdateDestroyAPIView):
@@ -226,6 +221,7 @@ class CouponDetailAPIView(CouponMixin, RetrieveUpdateDestroyAPIView):
             "description": null
        }
     """
+
     serializer_class = CouponSerializer
 
     def put(self, request, *args, **kwargs):
@@ -294,7 +290,7 @@ class CouponDetailAPIView(CouponMixin, RetrieveUpdateDestroyAPIView):
         return self.coupon
 
     def perform_update(self, serializer):
-        if serializer.validated_data.get('ends_at', None):
+        if serializer.validated_data.get("ends_at", None):
             serializer.save(organization=self.organization)
         else:
-            serializer.save(organization=self.organization, ends_at='never')
+            serializer.save(organization=self.organization, ends_at="never")

@@ -22,17 +22,17 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-'''API URLs typically associated with the provider.'''
+"""API URLs typically associated with the provider."""
 
 from django.conf.urls import include, url
 
 from ....settings import ACCT_REGEX
 
 urlpatterns = [
-    url(r'^', include('saas.urls.api.provider.charges')),
-    url(r'^', include('saas.urls.api.provider.billing')),
-    url(r'^', include('saas.urls.api.provider.roles')),
-    url(r'^', include('saas.urls.api.provider.subscribers')),
-    url(r'^', include('saas.urls.api.provider.plans')),
-    url(r'^', include('saas.urls.api.provider.metrics')),
+    url(r"^", include("saas.urls.api.provider.charges")),
+    url(r"^", include("saas.urls.api.provider.billing")),
+    url(r"^", include("saas.urls.api.provider.roles")),
+    url(r"^", include("saas.urls.api.provider.subscribers")),
+    url(r"^", include("saas.urls.api.provider.plans")),
+    url(r"^", include("saas.urls.api.provider.metrics")),
 ]

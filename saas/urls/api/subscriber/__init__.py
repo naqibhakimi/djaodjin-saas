@@ -22,13 +22,13 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-'''API URLs typically associated with the subscriber.'''
+"""API URLs typically associated with the subscriber."""
 
 from django.conf.urls import include, url
 
 urlpatterns = [
-    url(r'^', include('saas.urls.api.subscriber.charges')),
-    url(r'^', include('saas.urls.api.subscriber.billing')),
-    url(r'^', include('saas.urls.api.subscriber.roles')),
-    url(r'^', include('saas.urls.api.subscriber.profile')),
+    url(r"^", include("saas.urls.api.subscriber.charges")),
+    url(r"^", include("saas.urls.api.subscriber.billing")),
+    url(r"^", include("saas.urls.api.subscriber.roles")),
+    url(r"^", include("saas.urls.api.subscriber.profile")),
 ]

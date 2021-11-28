@@ -28,31 +28,58 @@ URLs API for provider resources related to billing
 
 from django.conf.urls import url
 
-from ....api.metrics import (BalancesAPIView, CouponUsesAPIView,
-    CustomerMetricAPIView, LifetimeValueMetricAPIView, PlanMetricAPIView,
-    RevenueMetricAPIView)
-from ....api.subscriptions import (ActiveSubscriptionAPIView,
-    ChurnedSubscriptionAPIView)
+from ....api.metrics import (
+    BalancesAPIView,
+    CouponUsesAPIView,
+    CustomerMetricAPIView,
+    LifetimeValueMetricAPIView,
+    PlanMetricAPIView,
+    RevenueMetricAPIView,
+)
+from ....api.subscriptions import ActiveSubscriptionAPIView, ChurnedSubscriptionAPIView
 from ....settings import ACCT_REGEX
 
 
 urlpatterns = [
-    url(r'^metrics/(?P<organization>%s)/coupons/(?P<coupon>%s)/?' % (
-        ACCT_REGEX, ACCT_REGEX), CouponUsesAPIView.as_view(),
-        name='saas_api_coupon_uses'),
-    url(r'^metrics/(?P<organization>%s)/active/?' % ACCT_REGEX,
-        ActiveSubscriptionAPIView.as_view(), name='saas_api_subscribed'),
-    url(r'^metrics/(?P<organization>%s)/balances/?' % ACCT_REGEX,
-        BalancesAPIView.as_view(), name='saas_api_balances'),
-    url(r'^metrics/(?P<organization>%s)/churned/?' % ACCT_REGEX,
-        ChurnedSubscriptionAPIView.as_view(), name='saas_api_churned'),
-    url(r'^metrics/(?P<organization>%s)/customers/?' % ACCT_REGEX,
-        CustomerMetricAPIView.as_view(), name='saas_api_customer'),
-    url(r'^metrics/(?P<organization>%s)/plans/?' % ACCT_REGEX,
-        PlanMetricAPIView.as_view(), name='saas_api_metrics_plans'),
-    url(r'^metrics/(?P<organization>%s)/funds/?' % ACCT_REGEX,
-        RevenueMetricAPIView.as_view(), name='saas_api_revenue'),
-    url(r'^metrics/(?P<organization>%s)/lifetimevalue/?' % ACCT_REGEX,
+    url(
+        r"^metrics/(?P<organization>%s)/coupons/(?P<coupon>%s)/?"
+        % (ACCT_REGEX, ACCT_REGEX),
+        CouponUsesAPIView.as_view(),
+        name="saas_api_coupon_uses",
+    ),
+    url(
+        r"^metrics/(?P<organization>%s)/active/?" % ACCT_REGEX,
+        ActiveSubscriptionAPIView.as_view(),
+        name="saas_api_subscribed",
+    ),
+    url(
+        r"^metrics/(?P<organization>%s)/balances/?" % ACCT_REGEX,
+        BalancesAPIView.as_view(),
+        name="saas_api_balances",
+    ),
+    url(
+        r"^metrics/(?P<organization>%s)/churned/?" % ACCT_REGEX,
+        ChurnedSubscriptionAPIView.as_view(),
+        name="saas_api_churned",
+    ),
+    url(
+        r"^metrics/(?P<organization>%s)/customers/?" % ACCT_REGEX,
+        CustomerMetricAPIView.as_view(),
+        name="saas_api_customer",
+    ),
+    url(
+        r"^metrics/(?P<organization>%s)/plans/?" % ACCT_REGEX,
+        PlanMetricAPIView.as_view(),
+        name="saas_api_metrics_plans",
+    ),
+    url(
+        r"^metrics/(?P<organization>%s)/funds/?" % ACCT_REGEX,
+        RevenueMetricAPIView.as_view(),
+        name="saas_api_revenue",
+    ),
+    url(
+        r"^metrics/(?P<organization>%s)/lifetimevalue/?" % ACCT_REGEX,
         LifetimeValueMetricAPIView.as_view(),
-        name='saas_api_metrics_lifetimevalue'),
+        name="saas_api_metrics_lifetimevalue",
+    ),
 ]

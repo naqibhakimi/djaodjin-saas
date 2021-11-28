@@ -28,27 +28,36 @@ from django.utils.translation import ugettext_lazy as _
 from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.response import Response
 
-from .serializers import (CartItemSerializer, LifetimeSerializer,
-    MetricsSerializer)
+from .serializers import CartItemSerializer, LifetimeSerializer, MetricsSerializer
 from .. import settings
 from ..compat import reverse, six
 from ..filters import DateRangeFilter
-from ..metrics.base import (abs_monthly_balances,
-    aggregate_transactions_by_period, month_periods,
-    aggregate_transactions_change_by_period, get_different_units)
-from ..metrics.subscriptions import (active_subscribers, churn_subscribers,
-    subscribers_age)
+from ..metrics.base import (
+    abs_monthly_balances,
+    aggregate_transactions_by_period,
+    month_periods,
+    aggregate_transactions_change_by_period,
+    get_different_units,
+)
+from ..metrics.subscriptions import (
+    active_subscribers,
+    churn_subscribers,
+    subscribers_age,
+)
 from ..metrics.transactions import lifetime_value
-from ..mixins import (CartItemSmartListMixin, CouponMixin,
-    ProviderMixin, DateRangeContextMixin)
+from ..mixins import (
+    CartItemSmartListMixin,
+    CouponMixin,
+    ProviderMixin,
+    DateRangeContextMixin,
+)
 from ..models import CartItem, Plan, Transaction
 from ..utils import convert_dates_to_utc, get_organization_model
 
 LOGGER = logging.getLogger(__name__)
 
 
-class BalancesAPIView(DateRangeContextMixin, ProviderMixin,
-                      GenericAPIView):
+class BalancesAPIView(DateRangeContextMixin, ProviderMixin, GenericAPIView):
     """
     Retrieves 12-month trailing deferred balances
 
@@ -129,31 +138,31 @@ class BalancesAPIView(DateRangeContextMixin, ProviderMixin,
             ]
         }
     """
+
     serializer_class = MetricsSerializer
     filter_backends = (DateRangeFilter,)
 
-    def get(self, request, *args, **kwargs): #pylint: disable=unused-argument
+    def get(self, request, *args, **kwargs):  # pylint: disable=unused-argument
         result = []
         unit = settings.DEFAULT_UNIT
-        for key in [Transaction.INCOME, Transaction.BACKLOG,
-                    Transaction.RECEIVABLE]:
+        for key in [Transaction.INCOME, Transaction.BACKLOG, Transaction.RECEIVABLE]:
             values, _unit = abs_monthly_balances(
-                organization=self.provider, account=key,
-                until=self.ends_at, tz=self.timezone)
+                organization=self.provider,
+                account=key,
+                until=self.ends_at,
+                tz=self.timezone,
+            )
 
             if _unit:
                 unit = _unit
 
-            result += [{
-                'key': key,
-                'values': values
-            }]
-        return Response({'title': "Balances",
-            'unit': unit, 'scale': 0.01, 'table': result})
+            result += [{"key": key, "values": values}]
+        return Response(
+            {"title": "Balances", "unit": unit, "scale": 0.01, "table": result}
+        )
 
 
-class RevenueMetricAPIView(DateRangeContextMixin, ProviderMixin,
-                           GenericAPIView):
+class RevenueMetricAPIView(DateRangeContextMixin, ProviderMixin, GenericAPIView):
     """
     Retrieves 12-month trailing revenue
 
@@ -268,67 +277,71 @@ class RevenueMetricAPIView(DateRangeContextMixin, ProviderMixin,
             ]
         }
     """
+
     serializer_class = MetricsSerializer
     filter_backends = (DateRangeFilter,)
 
     def get(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
-        dates = convert_dates_to_utc(
-            month_periods(12, self.ends_at, tz=self.timezone))
+        # pylint:disable=unused-argument
+        dates = convert_dates_to_utc(month_periods(12, self.ends_at, tz=self.timezone))
 
         unit = settings.DEFAULT_UNIT
 
-        account_table, _, _, table_unit = \
-            aggregate_transactions_change_by_period(self.provider,
-                Transaction.RECEIVABLE, account_title='Sales',
-                orig='orig', dest='dest',
-                date_periods=dates)
+        account_table, _, _, table_unit = aggregate_transactions_change_by_period(
+            self.provider,
+            Transaction.RECEIVABLE,
+            account_title="Sales",
+            orig="orig",
+            dest="dest",
+            date_periods=dates,
+        )
 
         _, payment_amounts, payments_unit = aggregate_transactions_by_period(
-            self.provider, Transaction.RECEIVABLE,
-            orig='dest', dest='dest',
+            self.provider,
+            Transaction.RECEIVABLE,
+            orig="dest",
+            dest="dest",
             orig_account=Transaction.BACKLOG,
             orig_organization=self.provider,
-            date_periods=dates)
+            date_periods=dates,
+        )
 
         _, refund_amounts, refund_unit = aggregate_transactions_by_period(
-            self.provider, Transaction.REFUND,
-            orig='dest', dest='dest',
-            date_periods=dates)
+            self.provider,
+            Transaction.REFUND,
+            orig="dest",
+            dest="dest",
+            date_periods=dates,
+        )
 
         units = get_different_units(table_unit, payments_unit, refund_unit)
 
         if len(units) > 1:
-            LOGGER.error("different units in RevenueMetricAPIView.get: %s",
-                units)
+            LOGGER.error("different units in RevenueMetricAPIView.get: %s", units)
 
         if units:
             unit = units[0]
 
         account_table += [
             {"key": "Payments", "values": payment_amounts},
-            {"key": "Refunds", "values": refund_amounts}]
+            {"key": "Refunds", "values": refund_amounts},
+        ]
 
-        resp = {
-            "title": "Amount",
-            "unit": unit,
-            "scale": 0.01,
-            "table": account_table
-        }
+        resp = {"title": "Amount", "unit": unit, "scale": 0.01, "table": account_table}
         if not self.provider.has_bank_account:
-            resp.update({'processor_hint': 'connect_provider'})
+            resp.update({"processor_hint": "connect_provider"})
 
         return Response(resp)
 
 
 class CouponUsesQuerysetMixin(object):
-
     def get_queryset(self):
         return CartItem.objects.filter(coupon=self.coupon, recorded=True)
 
 
-class CouponUsesAPIView(CartItemSmartListMixin, CouponUsesQuerysetMixin,
-                        CouponMixin, ListAPIView):
+class CouponUsesAPIView(
+    CartItemSmartListMixin, CouponUsesQuerysetMixin, CouponMixin, ListAPIView
+):
     """
     Retrieves performance of a discount code
 
@@ -372,12 +385,12 @@ class CouponUsesAPIView(CartItemSmartListMixin, CouponUsesQuerysetMixin,
             ]
         }
     """
+
     forced_date_range = False
     serializer_class = CartItemSerializer
 
 
-class CustomerMetricAPIView(DateRangeContextMixin, ProviderMixin,
-                            GenericAPIView):
+class CustomerMetricAPIView(DateRangeContextMixin, ProviderMixin, GenericAPIView):
     """
     Retrieves 12-month trailing customer counts
 
@@ -490,55 +503,59 @@ class CustomerMetricAPIView(DateRangeContextMixin, ProviderMixin,
             ]
         }
     """
+
     serializer_class = MetricsSerializer
     filter_backends = (DateRangeFilter,)
 
     def get(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
-        account_title = 'Payments'
+        # pylint:disable=unused-argument
+        account_title = "Payments"
         account = Transaction.RECEIVABLE
         # We use ``Transaction.RECEIVABLE`` which technically counts the number
         # or orders, not the number of payments.
 
-        dates = convert_dates_to_utc(
-            month_periods(12, self.ends_at, tz=self.timezone))
-        _, customer_table, customer_extra, _ = \
-            aggregate_transactions_change_by_period(self.provider, account,
-                account_title=account_title,
-                date_periods=dates)
+        dates = convert_dates_to_utc(month_periods(12, self.ends_at, tz=self.timezone))
+        _, customer_table, customer_extra, _ = aggregate_transactions_change_by_period(
+            self.provider, account, account_title=account_title, date_periods=dates
+        )
 
         return Response(
-            {"title": "Customers",
-                "table": customer_table, "extra": customer_extra})
+            {"title": "Customers", "table": customer_table, "extra": customer_extra}
+        )
 
 
 class LifetimeValueMetricMixin(DateRangeContextMixin, ProviderMixin):
     """
     Decorates profiles with subscriber age and lifetime value
     """
+
     filter_backends = (DateRangeFilter,)
 
     def get_queryset(self):
         organization_model = get_organization_model()
         if self.provider:
             queryset = organization_model.objects.filter(
-                subscribes_to__organization=self.provider).distinct()
+                subscribes_to__organization=self.provider
+            ).distinct()
         else:
             queryset = organization_model.objects.all()
         queryset = queryset.filter(
-            outgoing__orig_account=Transaction.PAYABLE).distinct()
-        return queryset.order_by('full_name')
+            outgoing__orig_account=Transaction.PAYABLE
+        ).distinct()
+        return queryset.order_by("full_name")
 
     def decorate_queryset(self, queryset):
         decorated_queryset = list(queryset)
-        subscriber_ages = {subscriber['slug']: subscriber
-            for subscriber in subscribers_age(provider=self.provider)}
+        subscriber_ages = {
+            subscriber["slug"]: subscriber
+            for subscriber in subscribers_age(provider=self.provider)
+        }
         customer_values = lifetime_value(provider=self.provider)
         for organization in decorated_queryset:
             subscriber = subscriber_ages.get(organization.slug)
             if subscriber:
-                organization.created_at = subscriber['created_at']
-                organization.ends_at = subscriber['ends_at']
+                organization.created_at = subscriber["created_at"]
+                organization.ends_at = subscriber["ends_at"]
             else:
                 organization.ends_at = None
             customer = customer_values.get(organization.slug)
@@ -546,9 +563,9 @@ class LifetimeValueMetricMixin(DateRangeContextMixin, ProviderMixin):
                 for unit, val in six.iteritems(customer):
                     # XXX Only supports one currency unit.
                     organization.unit = unit
-                    organization.contract_value = val['contract_value']
-                    organization.cash_payments = val['payments']
-                    organization.deferred_revenue = val['deferred_revenue']
+                    organization.contract_value = val["contract_value"]
+                    organization.cash_payments = val["payments"]
+                    organization.deferred_revenue = val["deferred_revenue"]
             else:
                 organization.unit = settings.DEFAULT_UNIT
                 organization.contract_value = 0
@@ -592,11 +609,11 @@ class LifetimeValueMetricAPIView(LifetimeValueMetricMixin, ListAPIView):
             ]
         }
     """
+
     serializer_class = LifetimeSerializer
 
     def paginate_queryset(self, queryset):
-        page = super(
-            LifetimeValueMetricAPIView, self).paginate_queryset(queryset)
+        page = super(LifetimeValueMetricAPIView, self).paginate_queryset(queryset)
         return self.decorate_queryset(page if page else queryset)
 
 
@@ -706,27 +723,31 @@ class PlanMetricAPIView(DateRangeContextMixin, ProviderMixin, GenericAPIView):
             ]
         }
     """
+
     serializer_class = MetricsSerializer
     filter_backends = (DateRangeFilter,)
 
     def get(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         table = []
-        for plan in Plan.objects.filter(
-                organization=self.provider).order_by('title'):
-            values = active_subscribers(
-                plan, from_date=self.ends_at, tz=self.timezone)
-            table.append({
-                "key": plan.slug,
-                "title": plan.title,
-                "values": values,
-                "location": reverse(
-                    'saas_plan_edit', args=(self.provider, plan)),
-                "is_active": plan.is_active})
-        extra = [{"key": "churn",
-            "values": churn_subscribers(
-                from_date=self.ends_at, tz=self.timezone)}]
+        for plan in Plan.objects.filter(organization=self.provider).order_by("title"):
+            values = active_subscribers(plan, from_date=self.ends_at, tz=self.timezone)
+            table.append(
+                {
+                    "key": plan.slug,
+                    "title": plan.title,
+                    "values": values,
+                    "location": reverse("saas_plan_edit", args=(self.provider, plan)),
+                    "is_active": plan.is_active,
+                }
+            )
+        extra = [
+            {
+                "key": "churn",
+                "values": churn_subscribers(from_date=self.ends_at, tz=self.timezone),
+            }
+        ]
 
         return Response(
-            {"title": _("Active subscribers"),
-                "table": table, "extra": extra})
+            {"title": _("Active subscribers"), "table": table, "extra": extra}
+        )

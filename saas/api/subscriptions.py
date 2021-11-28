@@ -22,30 +22,43 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#pylint:disable=useless-super-delegation
+# pylint:disable=useless-super-delegation
 
 import logging
 
 from rest_framework import status
-from rest_framework.generics import (get_object_or_404, GenericAPIView,
-    ListAPIView, ListCreateAPIView, RetrieveUpdateDestroyAPIView)
+from rest_framework.generics import (
+    get_object_or_404,
+    GenericAPIView,
+    ListAPIView,
+    ListCreateAPIView,
+    RetrieveUpdateDestroyAPIView,
+)
 from rest_framework.response import Response
 
 from ..decorators import _valid_manager
 from ..docs import OpenAPIResponse, no_body, swagger_auto_schema
 from ..filters import DateRangeFilter
-from ..mixins import (ChurnedQuerysetMixin, PlanSubscribersQuerysetMixin,
-    ProviderMixin, SubscriptionMixin, SubscriptionSmartListMixin,
-    SubscribedQuerysetMixin)
+from ..mixins import (
+    ChurnedQuerysetMixin,
+    PlanSubscribersQuerysetMixin,
+    ProviderMixin,
+    SubscriptionMixin,
+    SubscriptionSmartListMixin,
+    SubscribedQuerysetMixin,
+)
 from .. import signals
 from ..models import Subscription
 from ..utils import generate_random_slug, datetime_or_now
 from .roles import OptinBase
-from .serializers import (ForceSerializer,
-    ProvidedSubscriptionSerializer, ProvidedSubscriptionCreateSerializer,
-    SubscribedSubscriptionSerializer)
+from .serializers import (
+    ForceSerializer,
+    ProvidedSubscriptionSerializer,
+    ProvidedSubscriptionCreateSerializer,
+    SubscribedSubscriptionSerializer,
+)
 
-#pylint: disable=no-init
+# pylint: disable=no-init
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,8 +68,9 @@ class SubscribedSubscriptionListBaseAPIView(SubscriptionMixin, ListAPIView):
     pass
 
 
-class SubscribedSubscriptionListAPIView(SubscriptionSmartListMixin,
-                                    SubscribedSubscriptionListBaseAPIView):
+class SubscribedSubscriptionListAPIView(
+    SubscriptionSmartListMixin, SubscribedSubscriptionListBaseAPIView
+):
     """
     Lists a subscriber subscriptions
 
@@ -113,14 +127,13 @@ class SubscribedSubscriptionListAPIView(SubscriptionSmartListMixin,
             ]
         }
     """
+
     serializer_class = SubscribedSubscriptionSerializer
 
     # No POST. We are talking about a subscriber Organization here.
 
 
-
-class SubscriptionDetailAPIView(SubscriptionMixin,
-                                RetrieveUpdateDestroyAPIView):
+class SubscriptionDetailAPIView(SubscriptionMixin, RetrieveUpdateDestroyAPIView):
     """
     Retrieves a subscription
 
@@ -186,6 +199,7 @@ class SubscriptionDetailAPIView(SubscriptionMixin,
           "request_key": null
         }
     """
+
     serializer_class = SubscribedSubscriptionSerializer
 
     def put(self, request, *args, **kwargs):
@@ -265,8 +279,7 @@ class SubscriptionDetailAPIView(SubscriptionMixin,
             }
 
         """
-        return super(SubscriptionDetailAPIView, self).put(
-            request, *args, **kwargs)
+        return super(SubscriptionDetailAPIView, self).put(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         """
@@ -286,28 +299,28 @@ class SubscriptionDetailAPIView(SubscriptionMixin,
 
             DELETE /api/profile/xia/subscriptions/open-space/ HTTP/1.1
         """
-        return super(SubscriptionDetailAPIView, self).delete(
-            request, *args, **kwargs)
+        return super(SubscriptionDetailAPIView, self).delete(request, *args, **kwargs)
 
     def perform_update(self, serializer):
-        if not _valid_manager(
-                self.request, [serializer.instance.plan.organization]):
-            serializer.validated_data['created_at'] \
-                = serializer.instance.created_at
-            serializer.validated_data['ends_at'] = serializer.instance.ends_at
+        if not _valid_manager(self.request, [serializer.instance.plan.organization]):
+            serializer.validated_data["created_at"] = serializer.instance.created_at
+            serializer.validated_data["ends_at"] = serializer.instance.ends_at
         super(SubscriptionDetailAPIView, self).perform_update(serializer)
 
     def destroy(self, request, *args, **kwargs):
-        #pylint:disable=unused-argument
+        # pylint:disable=unused-argument
         at_time = datetime_or_now()
         queryset = self.get_queryset().filter(ends_at__gt=at_time)
         queryset.unsubscribe(at_time=at_time)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ProvidedSubscriptionsAPIView(SubscriptionSmartListMixin,
-                               PlanSubscribersQuerysetMixin,
-                               OptinBase, ListCreateAPIView):
+class ProvidedSubscriptionsAPIView(
+    SubscriptionSmartListMixin,
+    PlanSubscribersQuerysetMixin,
+    OptinBase,
+    ListCreateAPIView,
+):
     """
     Lists subscriptions to a plan
 
@@ -342,12 +355,12 @@ class ProvidedSubscriptionsAPIView(SubscriptionSmartListMixin,
             }]
         }
     """
+
     serializer_class = ProvidedSubscriptionSerializer
-    filter_backends = SubscriptionSmartListMixin.filter_backends + (
-        DateRangeFilter,)
+    filter_backends = SubscriptionSmartListMixin.filter_backends + (DateRangeFilter,)
 
     def get_serializer_class(self):
-        if self.request.method.lower() == 'post':
+        if self.request.method.lower() == "post":
             return ProvidedSubscriptionCreateSerializer
         return super(ProvidedSubscriptionsAPIView, self).get_serializer_class()
 
@@ -362,12 +375,17 @@ class ProvidedSubscriptionsAPIView(SubscriptionSmartListMixin,
             # We do not use `Subscription.objects.active_for` here because
             # if the subscription was already created and the grant yet to be
             # accepted, we want to avoid creating a duplicate.
-            subscription = Subscription.objects.filter(
-                organization=organization, plan=self.plan,
-                ends_at__gte=ends_at).order_by('ends_at').first()
+            subscription = (
+                Subscription.objects.filter(
+                    organization=organization, plan=self.plan, ends_at__gte=ends_at
+                )
+                .order_by("ends_at")
+                .first()
+            )
             if subscription is None:
                 subscription = Subscription.objects.new_instance(
-                    organization, plan=self.plan)
+                    organization, plan=self.plan
+                )
                 if not self.plan.skip_optin_on_grant:
                     subscription.grant_key = generate_random_slug()
                 subscription.save()
@@ -381,9 +399,10 @@ class ProvidedSubscriptionsAPIView(SubscriptionSmartListMixin,
             subscriptions += [subscription]
         return subscriptions, created
 
-    @swagger_auto_schema(responses={
-      201: OpenAPIResponse("created", ProvidedSubscriptionSerializer)},
-        query_serializer=ForceSerializer)
+    @swagger_auto_schema(
+        responses={201: OpenAPIResponse("created", ProvidedSubscriptionSerializer)},
+        query_serializer=ForceSerializer,
+    )
     def post(self, request, *args, **kwargs):
         """
         Grants a subscription
@@ -434,16 +453,19 @@ class ProvidedSubscriptionsAPIView(SubscriptionSmartListMixin,
               "auto_renew": true
             }
         """
-        return super(ProvidedSubscriptionsAPIView, self).post(
-            request, *args, **kwargs)
+        return super(ProvidedSubscriptionsAPIView, self).post(request, *args, **kwargs)
 
     def send_signals(self, relations, user, reason=None, invite=False):
         for subscription in relations:
-            signals.subscription_grant_created.send(sender=__name__,
-                subscription=subscription, reason=reason, invite=invite,
-                request=self.request)
+            signals.subscription_grant_created.send(
+                sender=__name__,
+                subscription=subscription,
+                reason=reason,
+                invite=invite,
+                request=self.request,
+            )
 
-    def create(self, request, *args, **kwargs): #pylint:disable=unused-argument
+    def create(self, request, *args, **kwargs):  # pylint:disable=unused-argument
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return self.perform_optin(serializer, request)
@@ -516,13 +538,16 @@ class PlanSubscriptionDetailAPIView(ProviderMixin, SubscriptionDetailAPIView):
           "request_key": null
         }
     """
-    subscriber_url_kwarg = 'subscriber'
+
+    subscriber_url_kwarg = "subscriber"
     serializer_class = ProvidedSubscriptionSerializer
 
     def get_queryset(self):
-        return super(PlanSubscriptionDetailAPIView, self).get_queryset().filter(
-            plan__organization=self.provider)
-
+        return (
+            super(PlanSubscriptionDetailAPIView, self)
+            .get_queryset()
+            .filter(plan__organization=self.provider)
+        )
 
     def delete(self, request, *args, **kwargs):
         """
@@ -540,8 +565,8 @@ class PlanSubscriptionDetailAPIView(ProviderMixin, SubscriptionDetailAPIView):
  HTTP/1.1
         """
         return super(PlanSubscriptionDetailAPIView, self).delete(
-            request, *args, **kwargs)
-
+            request, *args, **kwargs
+        )
 
     def put(self, request, *args, **kwargs):
         """
@@ -617,8 +642,7 @@ class PlanSubscriptionDetailAPIView(ProviderMixin, SubscriptionDetailAPIView):
                "request_key": null
              }
         """
-        return super(PlanSubscriptionDetailAPIView, self).put(
-            request, *args, **kwargs)
+        return super(PlanSubscriptionDetailAPIView, self).put(request, *args, **kwargs)
 
 
 class ActiveSubscriptionBaseAPIView(SubscribedQuerysetMixin, ListAPIView):
@@ -626,8 +650,9 @@ class ActiveSubscriptionBaseAPIView(SubscribedQuerysetMixin, ListAPIView):
     pass
 
 
-class ActiveSubscriptionAPIView(SubscriptionSmartListMixin,
-                                ActiveSubscriptionBaseAPIView):
+class ActiveSubscriptionAPIView(
+    SubscriptionSmartListMixin, ActiveSubscriptionBaseAPIView
+):
     """
     Lists active subscriptions
 
@@ -692,9 +717,9 @@ class ActiveSubscriptionAPIView(SubscriptionSmartListMixin,
             ]
         }
     """
+
     serializer_class = ProvidedSubscriptionSerializer
-    filter_backends = (SubscriptionSmartListMixin.filter_backends +
-        (DateRangeFilter,))
+    filter_backends = SubscriptionSmartListMixin.filter_backends + (DateRangeFilter,)
 
 
 class ChurnedSubscriptionBaseAPIView(ChurnedQuerysetMixin, ListAPIView):
@@ -702,8 +727,9 @@ class ChurnedSubscriptionBaseAPIView(ChurnedQuerysetMixin, ListAPIView):
     pass
 
 
-class ChurnedSubscriptionAPIView(SubscriptionSmartListMixin,
-                                 ChurnedSubscriptionBaseAPIView):
+class ChurnedSubscriptionAPIView(
+    SubscriptionSmartListMixin, ChurnedSubscriptionBaseAPIView
+):
     """
     Lists churned subscriptions
 
@@ -761,6 +787,7 @@ class ChurnedSubscriptionAPIView(SubscriptionSmartListMixin,
             ]
         }
     """
+
     serializer_class = ProvidedSubscriptionSerializer
 
 
@@ -768,22 +795,29 @@ class SubscriptionRequestAcceptAPIView(GenericAPIView):
     """
     Accepts a subscription request
     """
-    provider_url_kwarg = 'organization'
+
+    provider_url_kwarg = "organization"
     serializer_class = ProvidedSubscriptionSerializer
 
     @property
     def subscription(self):
-        if not hasattr(self, '_subscription'):
-            self._subscription = get_object_or_404(self.get_queryset(),
-                request_key=self.kwargs.get('request_key'))
+        if not hasattr(self, "_subscription"):
+            self._subscription = get_object_or_404(
+                self.get_queryset(), request_key=self.kwargs.get("request_key")
+            )
         return self._subscription
 
     def get_queryset(self):
         return Subscription.objects.active_with(
-            self.kwargs.get(self.provider_url_kwarg))
+            self.kwargs.get(self.provider_url_kwarg)
+        )
 
-    @swagger_auto_schema(request_body=no_body, responses={
-      200: OpenAPIResponse("Grant successful", ProvidedSubscriptionSerializer)})
+    @swagger_auto_schema(
+        request_body=no_body,
+        responses={
+            200: OpenAPIResponse("Grant successful", ProvidedSubscriptionSerializer)
+        },
+    )
     def post(self, request, *args, **kwargs):
         """
         Grants a subscription request
@@ -852,19 +886,28 @@ class SubscriptionRequestAcceptAPIView(GenericAPIView):
               "request_key": null
             }
         """
-        #pylint:disable=unused-argument
-        request_key = self.kwargs.get('request_key')
+        # pylint:disable=unused-argument
+        request_key = self.kwargs.get("request_key")
         self.subscription.request_key = None
         LOGGER.info(
             "%s accepted subscription of %s to plan %s (request_key=%s)",
-            self.request.user, self.subscription.organization,
-            self.subscription.plan, request_key, extra={
-                'request': self.request, 'event': 'accept',
-                'user': str(self.request.user),
-                'organization': str(self.subscription.organization),
-                'plan': str(self.subscription.plan),
-                'ends_at': str(self.subscription.ends_at),
-                'request_key': request_key})
-        signals.subscription_request_accepted.send(sender=__name__,
+            self.request.user,
+            self.subscription.organization,
+            self.subscription.plan,
+            request_key,
+            extra={
+                "request": self.request,
+                "event": "accept",
+                "user": str(self.request.user),
+                "organization": str(self.subscription.organization),
+                "plan": str(self.subscription.plan),
+                "ends_at": str(self.subscription.ends_at),
+                "request_key": request_key,
+            },
+        )
+        signals.subscription_request_accepted.send(
+            sender=__name__,
             subscription=self.subscription,
-            request_key=request_key, request=self.request)
+            request_key=request_key,
+            request=self.request,
+        )
