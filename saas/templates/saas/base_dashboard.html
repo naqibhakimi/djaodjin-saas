@@ -61,8 +61,8 @@ reopenSaasApp.constant('settings', {
   },
   {% endif %}
   user: {
-    username: "{{request.user.username}}",
-    slug: "{{request.user.username}}",
+    username: "{{request.user.get_username}}",
+    slug: "{{request.user.get_username}}",
     first_name: "{{request.user.first_name}}",
     last_name: "{{request.user.last_name}}"
   }

@@ -1,4 +1,4 @@
-# Copyright (c) 2021, DjaoDjin inc.
+# Copyright (c) 2017, DjaoDjin inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,9 @@ import sys
 
 from django.core.management.base import BaseCommand
 
-from ...models import get_broker
+from ... import settings
+from ...backends import get_processor_backend
+from ...models import Organization
 
 
 class Command(BaseCommand):
@@ -42,8 +44,9 @@ from the payment processor service."""
         pat = r'.*'
         if args:
             pat = args[0]
-        processor_backend = get_broker().processor_backend
-        for cust in processor_backend.list_customers(pat):
+        for cust in get_processor_backend(
+                provider=Organization.objects.get(pk=settings.PROCESSOR_ID
+                )).list_customers(pat):
             sys.stdout.write('%s %s\n' % (str(cust.id), str(cust.description)))
             if not options['no_execute']:
                 cust.delete()

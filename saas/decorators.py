@@ -67,7 +67,7 @@ def _valid_role(request, candidates, role):
     results = []
     if settings.BYPASS_PERMISSION_CHECK:
         if request.user:
-            username = request.user.username
+            username = request.user.get_username()
         else:
             username = '(none)'
         LOGGER.warning("Skip permission check for %s on organizations %s",
@@ -516,7 +516,7 @@ def fail_provider_only_strong(request, organization=None):
 
 def _fail_self_provider(request, user=None, strength=NORMAL,
                         roledescription=None):
-    if request.user.username == user:
+    if request.user.get_username() == user:
         return (settings.DISABLE_UPDATES and
             request.method not in ('GET', 'HEAD', 'OPTIONS', 'TRACE'))
 

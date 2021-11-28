@@ -253,7 +253,7 @@ class OrganizationCreateView(RedirectFormMixin, CreateView):
     def create_organization_from_user(self, user):#pylint:disable=no-self-use
         with transaction.atomic():
             organization = self.organization_model.objects.create(
-                slug=user.username,
+                slug=user.get_username(),
                 full_name=user.get_full_name(),
                 email=user.email)
             organization.add_manager(user)
@@ -273,7 +273,7 @@ class OrganizationCreateView(RedirectFormMixin, CreateView):
 
     def get_initial(self):
         kwargs = super(OrganizationCreateView, self).get_initial()
-        kwargs.update({'slug': self.request.user.username,
+        kwargs.update({'slug': self.request.user.get_username(),
                        'full_name': self.request.user.get_full_name(),
                        'email': self.request.user.email})
         return kwargs
@@ -376,7 +376,7 @@ class OrganizationProfileView(OrganizationMixin, UpdateView):
         validated_data = form.cleaned_data
         user = self.object.attached_user()
         if user:
-            user.username = validated_data.get('slug', user.username)
+            setattr(user, user.USERNAME_FIELD,validated_data.get('slug', user.get_username()))            
             user.email = validated_data.get('email', user.email)
             if update_db_row(user, form):
                 raise ValidationError("update_attached_user")

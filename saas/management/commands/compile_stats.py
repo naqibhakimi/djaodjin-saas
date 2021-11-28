@@ -42,7 +42,7 @@ class Command(BaseCommand):
         for user in get_user_model().objects.filter(
             date_joined__gt=start_period):
             self.stdout.write('%s %s %s\n' % (str(user.date_joined),
-                user.username, user.email))
+                user.get_username(), user.email))
 
         self.stdout.write('\n')
         for organization in Organization.objects.filter(

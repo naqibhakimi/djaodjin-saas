@@ -116,7 +116,7 @@ class AccountsTypeaheadAPIView(OrganizationSmartListMixin,
         return self.user_model.objects.filter(is_active=True).exclude(
             pk__in=self.user_model.objects.extra(
                 tables=['saas_organization'],
-                where=["username = slug"]).values('pk'))
+                where=["%s = slug" % self.user_model.USERNAME_FIELD ]).values('pk'))
 
     def list(self, request, *args, **kwargs):
         #pylint:disable=too-many-locals,too-many-statements

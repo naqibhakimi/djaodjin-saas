@@ -252,8 +252,7 @@ class OrganizationDetailAPIView(OrganizationMixin, OrganizationQuerysetMixin,
         changes = serializer.instance.get_changes(serializer.validated_data)
         user = serializer.instance.attached_user()
         if user:
-            user.username = serializer.validated_data.get(
-                'slug', user.username)
+            setattr(user, user.USERNAME_FIELD, serializer.validated_data.get('slug', user.get_username()))
         serializer.instance.slug = serializer.validated_data.get(
             'slug', serializer.instance.slug)
         try:
@@ -280,7 +279,7 @@ class OrganizationDetailAPIView(OrganizationMixin, OrganizationQuerysetMixin,
         with transaction.atomic():
             if user:
                 user.is_active = False
-                user.username = slug
+                setattr(user, user.USERNAME_FIELD,slug)
                 user.email = email
                 user.save()
             # Removes all roles on the organization such that the organization

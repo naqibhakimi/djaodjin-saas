@@ -26,6 +26,7 @@
 
 import logging
 
+from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.db.models import Q
@@ -44,7 +45,7 @@ from ..docs import OpenAPIResponse, no_body, swagger_auto_schema
 from ..decorators import _has_valid_access
 from ..mixins import (OrganizationMixin, OrganizationSmartListMixin,
     RoleDescriptionMixin, RoleMixin, RoleSmartListMixin, UserMixin)
-from ..models import _clean_field, get_broker
+from ..models import get_broker
 from ..pagination import RoleListPagination
 from ..utils import (full_name_natural_split, get_organization_model,
     get_role_model, get_role_serializer, generate_random_slug)
@@ -56,6 +57,25 @@ from .serializers import (AccessibleSerializer, ForceSerializer,
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _clean_field(user_model, field_name, value):
+    #pylint:disable=protected-access
+    field = user_model._meta.get_field(field_name)
+    max_length = field.max_length
+    if len(value) > max_length:
+        orig = value
+        value = value[:max_length]
+        LOGGER.info("shorten %s '%s' to '%s' because it is longer than"\
+            " %d characters", field_name, orig, value, max_length)
+    try:
+        field.run_validators(value)
+    except ValidationError:
+        orig = value
+        value = generate_random_slug(max_length, prefix='user_')
+        LOGGER.info("'%s' is an invalid %s so use '%s' instead.",
+            orig, field_name, value)
+    return value
 
 
 def create_user_from_email(email, password=None, **kwargs):
@@ -72,10 +92,8 @@ def create_user_from_email(email, password=None, **kwargs):
     if not (first_name or last_name):
         first_name, middle, last_name = full_name_natural_split(
             kwargs.get('full_name', ''))
-    first_name = _clean_field(
-        user_model, 'first_name', first_name, prefix='user_')
-    last_name = _clean_field(
-        user_model, 'last_name', last_name, prefix='user_')
+    first_name = _clean_field(user_model, 'first_name', first_name)
+    last_name = _clean_field(user_model, 'last_name', last_name)
     # The e-mail address was already validated by the Serializer.
     err = IntegrityError()
     if hasattr(user_model.objects, 'create_user_from_email'):
@@ -86,8 +104,7 @@ def create_user_from_email(email, password=None, **kwargs):
             email, password=password,
             first_name=first_name, last_name=last_name)
     else:
-        username = _clean_field(
-            user_model, 'username', email.split('@')[0], prefix='user_')
+        username = _clean_field(user_model, 'username', email.split('@')[0])
         #pylint:disable=protected-access
         field = user_model._meta.get_field('username')
         max_length = field.max_length
@@ -1349,8 +1366,6 @@ class UserProfileListAPIView(OrganizationSmartListMixin,
         return get_organization_model().objects.accessible_by(
             self.user, role_descr=settings.MANAGER)
 
-    @swagger_auto_schema(responses={
-      201: OpenAPIResponse("Create successful", OrganizationDetailSerializer)})
     def post(self, request, *args, **kwargs):
         """
         Creates a billing profile with a user as a profile manager
@@ -1392,25 +1407,15 @@ class UserProfileListAPIView(OrganizationSmartListMixin,
         #pylint:disable=unused-argument
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        validated_data = dict(serializer.validated_data)
-        if 'email' not in validated_data:
-            # email is optional to create the profile but it is required
-            # to save the record in the database.
-            validated_data.update({'email': request.user.email})
-        if 'full_name' not in validated_data:
-            # full_name is optional to create the profile but it is required
-            # to save the record in the database.
-            validated_data.update({'full_name': ""})
 
         # creates profile
         with transaction.atomic():
-            organization = self.create_organization(validated_data)
+            organization = self.create_organization(serializer.validated_data)
             organization.add_manager(self.user)
         self.decorate_personal(organization)
 
         # returns created profile
-        serializer = super(UserProfileListAPIView, self).get_serializer_class()(
-            instance=organization)
+        serializer = self.get_serializer(instance=organization)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,
             status=status.HTTP_201_CREATED, headers=headers)

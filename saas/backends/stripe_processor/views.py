@@ -33,6 +33,7 @@ import stripe
 from ... import settings
 from ...compat import import_string
 from ...models import Charge, get_broker
+from .. import get_processor_backend
 
 
 LOGGER = logging.getLogger(__name__)
@@ -85,7 +86,7 @@ class StripeWebhook(APIView):
 
     def post(self, request, *args, **kwargs):
         #pylint:disable=unused-argument,no-self-use
-        processor_backend = get_broker().processor_backend
+        processor_backend = get_processor_backend(get_broker())
         stripe.api_key = processor_backend.priv_key
 
         endpoint_secret = settings.PROCESSOR_HOOK_SECRET

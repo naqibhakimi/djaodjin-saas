@@ -110,7 +110,7 @@ class OrganizationRedirectView(TemplateResponseMixin, ContextMixin,
     def create_organization_from_user(self, user):#pylint:disable=no-self-use
         with transaction.atomic():
             organization = self.organization_model.objects.create(
-                slug=user.username,
+                slug=user.get_username(),
                 full_name=user.get_full_name(),
                 email=user.email)
             organization.add_manager(user)
@@ -274,7 +274,7 @@ class OrganizationRedirectView(TemplateResponseMixin, ContextMixin,
                 request, *args, **kwargs)
         redirects = []
         for organization in accessibles:
-            kwargs.update({self.slug_url_kwarg: str(organization)})
+            kwargs.update({self.slug_url_kwarg: organization})
             url = self.get_redirect_url(*args, **kwargs)
             redirects += [(url, organization.printable_name, organization.slug)]
         context = self.get_context_data(**kwargs)
@@ -310,5 +310,5 @@ class UserRedirectView(RedirectView):
         Find the ``User`` associated with the request user
         and return the URL that contains the username to redirect to.
         """
-        kwargs.update({self.slug_url_kwarg: self.request.user.username})
+        kwargs.update({self.slug_url_kwarg: self.request.user.get_username()})
         return super(UserRedirectView, self).get_redirect_url(*args, **kwargs)

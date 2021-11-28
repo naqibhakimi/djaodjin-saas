@@ -411,7 +411,8 @@ class UserMixin(object):
             if username:
                 user_model = get_user_model()
                 try:
-                    self._user = user_model.objects.get(username=username)
+                    query_kwargs = {user_model.USERNAME_FIELD: username}
+                    self._user = user_model.objects.get(**query_kwargs)
                 except user_model.DoesNotExist:
                     pass
             elif is_authenticated(self.request):
@@ -424,7 +425,7 @@ class UserMixin(object):
             top_accessibles = []
             queryset = get_organization_model().objects.accessible_by(
                 self.user).filter(is_active=True).exclude(
-                slug=self.user.username)[:self.SHORT_LIST_CUT_OFF + 1]
+                slug=self.user.get_username())[:self.SHORT_LIST_CUT_OFF + 1]
             for organization in queryset:
                 if organization.is_provider:
                     location = reverse('saas_dashboard', args=(organization,))
@@ -475,7 +476,7 @@ class OrganizationDecorateMixin(object):
     @staticmethod
     def as_organization(user):
         organization = get_organization_model()(
-            slug=user.username, email=user.email,
+            slug=user.get_username(), email=user.email,
             full_name=user.get_full_name(), created_at=user.date_joined)
         organization.user = user
         return organization

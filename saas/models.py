@@ -65,7 +65,6 @@ import datetime, logging, re
 
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import (DatabaseError, IntegrityError, connections, models,
     transaction)
 from django.db.models import Max, Q, Sum
@@ -142,7 +141,7 @@ class OrganizationManager(models.Manager):
         or None if none can be reliably found.
         """
         if isinstance(user, get_user_model()):
-            return self.filter(role__user=user, slug=user.username).first()
+            return self.filter(role__user=user, slug=user.get_username()).first()
         if isinstance(user, six.string_types):
             return self.filter(role__user__username=user, slug=user).first()
         return None
@@ -409,11 +408,7 @@ class Organization(models.Model):
                     force_insert=force_insert, force_update=force_update,
                     using=using, update_fields=update_fields)
         max_length = self._meta.get_field('slug').max_length
-        if self.full_name:
-            slug_base = slugify(self.full_name)
-        else:
-            slug_base = _clean_field(
-                self.__class__, 'slug', self.email.split('@')[0])
+        slug_base = slugify(self.full_name)
         if len(slug_base) > max_length:
             slug_base = slug_base[:max_length]
         self.slug = slug_base
@@ -931,7 +926,7 @@ class Organization(models.Model):
             return
         descr = "withdraw from %s" % self.printable_name
         if user:
-            descr += ' (%s)' % user.username
+            descr += ' (%s)' % user.get_username()
         self.processor_backend.create_transfer(
             self, amount, currency=settings.DEFAULT_UNIT, descr=descr)
         # We will wait on a call to ``reconcile_transfers`` to create
@@ -1193,7 +1188,7 @@ class Organization(models.Model):
                         LOGGER.info("%s cancel balance due of %d for %s.",
                             user, balance_due, self,
                             extra={'event': 'cancel-balance',
-                                'username': user.username,
+                                'username': user.get_username(),
                                 'organization': self.slug,
                                 'amount': balance_due})
 
@@ -1463,7 +1458,7 @@ class ChargeManager(models.Manager):
         descr = humanize.DESCRIBE_CHARGED_CARD % {
             'charge': '', 'organization': customer.printable_name}
         if user:
-            descr += ' (%s)' % user.username
+            descr += ' (%s)' % user.get_username()
         prev_processor_card_key = customer.processor_card_key
         try:
             if token and remember_card:
@@ -1486,7 +1481,7 @@ class ChargeManager(models.Manager):
                 'charge': processor_charge_id,
                 'organization': receipt_info.get('card_name', "")}
             if user:
-                descr += ' (%s)' % user.username
+                descr += ' (%s)' % user.get_username()
             return self.create_charge(customer, transactions,
                 amount, unit, processor, processor_charge_id, receipt_info,
                 user=user, descr=descr, created_at=created_at)
@@ -2268,7 +2263,7 @@ class ChargeItemManager(models.Manager):
         Returns charges which have been paid and a 3rd party asked
         to be notified about.
         """
-        results = self.filter(Q(sync_on=user.username) | Q(sync_on=user.email)
+        results = self.filter(Q(sync_on=user.get_username()) | Q(sync_on=user.email)
             | Q(sync_on__in=Organization.objects.accessible_by(user).values(
                 'slug').distinct()),
             charge__state=Charge.DONE, invoice_key__isnull=False)
@@ -3641,7 +3636,7 @@ class TransactionManager(models.Manager):
         if descr is None:
             descr = humanize.DESCRIBE_OFFLINE_PAYMENT
         if user:
-            descr += ' (%s)' % user.username
+            descr += ' (%s)' % user.get_username()
         created_at = datetime_or_now(created_at)
         if not payment_event_id:
             payment_event_id = generate_random_slug(prefix='check_')
@@ -4396,25 +4391,6 @@ class BalanceLine(models.Model):
 
     def __str__(self):
         return '%s/%d' % (self.report, int(self.rank))
-
-
-def _clean_field(model, field_name, value, prefix='profile_'):
-    #pylint:disable=protected-access
-    field = model._meta.get_field(field_name)
-    max_length = field.max_length
-    if len(value) > max_length:
-        orig = value
-        value = value[:max_length]
-        LOGGER.info("shorten %s '%s' to '%s' because it is longer than"\
-            " %d characters", field_name, orig, value, max_length)
-    try:
-        field.run_validators(value)
-    except DjangoValidationError:
-        orig = value
-        value = generate_random_slug(max_length, prefix=prefix)
-        LOGGER.info("'%s' is an invalid %s so use '%s' instead.",
-            orig, field_name, value)
-    return value
 
 
 def get_broker():
